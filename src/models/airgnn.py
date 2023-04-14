@@ -21,31 +21,38 @@ class AirGNN(nn.Module):
             s_air = torch.abs(s_air)
             return s_air
 
-    def __init__(self, c_in, c_out, snr_db = 10):
+    def __init__(self, c_in, c_out, k = 1, snr_db = 10):
         super(AirGNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
-        self.weight = nn.Parameter(torch.Tensor(c_in, c_out))
+        self.k = k
+        self.weight = nn.Parameter(torch.Tensor(c_in, c_out, k))
 
-    def forward(self, x_in, adj):
-        """
+    def shift(self, x, adj):
+        """function to shift the input signal:
         1. multiply pairwise A with S
         2. apply the shift operator to x
-        3. add white noise
-        4. multiply with the weight matrix
-        """
+        3. add white noise"""
         S = adj * self._channel_fading(adj) 
-        x = torch.einsum("ij,kl->il", (S,x_in))
+        x = torch.einsum("ij,kl->il", (S,x))
         x = x + self._white_noise(x)
-        x = torch.einsum("ij,kl->il", (x, self.weight))
         return x
 
-
+    def forward(self, x, adj):
+        """function to forward the input signal:
+        1. shift the input signal
+        2. apply the weight matrix to x
+        3. sum the output of each shift"""
+        out = torch.zeros(x.shape[0], self.c_out)
+        for i in range(self.k):
+            x = self.shift(x, adj)
+            out += torch.einsum("ij,kl->il", (x, self.weight[:,:,i]))
+        return out
 
 if __name__ == '__main__':
     # test
-    x = torch.randn(10, 3) + 10
-    adj = (torch.randn(10, 10) + .3).clamp(min = 0, max = 1)
-    model = AirGNN(3, 4)
-    y = model(x, adj)
+    x = torch.randn(10, 3)
+    adj = torch.randn(10, 10)
+    model = AirGNN(3, 3, k = 1)
+    out = model(x, adj)
