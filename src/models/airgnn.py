@@ -19,6 +19,7 @@ class AirGNN(nn.Module):
         with torch.no_grad():
             s_air = torch.randn_like(adj, dtype=torch.complex64)
             s_air = torch.abs(s_air)
+            # s_air *= torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
             return s_air
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10):
@@ -29,13 +30,17 @@ class AirGNN(nn.Module):
         self.k = k
         self.weight = nn.Parameter(torch.Tensor(c_in, c_out, k))
 
+    def reset_parameters(self):
+        """function to initialize the weight matrix"""
+        nn.init.xavier_uniform_(self.weight)
+
     def shift(self, x, adj):
         """function to shift the input signal:
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
         S = adj * self._channel_fading(adj) 
-        x = torch.einsum("ij,kl->il", (S,x))
+        x = torch.einsum("ij,jk->ik", (S,x)) # S @ x 
         x = x + self._white_noise(x)
         return x
 
@@ -44,10 +49,11 @@ class AirGNN(nn.Module):
         1. shift the input signal
         2. apply the weight matrix to x
         3. sum the output of each shift"""
-        out = torch.zeros(x.shape[0], self.c_out)
-        for i in range(self.k):
+        x = self.shift(x, adj)
+        out = torch.einsum("ij,jk->ik", (x, self.weight[:,:,0])) # x @ self.weight[:,:,0]
+        for i in range(1, self.k):
             x = self.shift(x, adj)
-            out += torch.einsum("ij,kl->il", (x, self.weight[:,:,i]))
+            out += torch.einsum("ij,jk->ik", (x, self.weight[:,:,i])) # x @ self.weight[:,:,i]
         return out
 
 if __name__ == '__main__':

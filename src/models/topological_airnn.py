@@ -42,8 +42,8 @@ class TAirGNN(nn.Module):
         3. add white noise"""
         fading = self._channel_fading(upper_lp)
         noise  = self._white_noise(x_up)
-        x_up  = torch.einsum("ij,kl->il", (upper_lp * fading, x_up )) + noise # (S_up @ x_up + n)
-        x_low = torch.einsum("ij,kl->il", (lower_lp * fading, x_low)) + noise # (S_low @ x_low + n)
+        x_up  = torch.einsum("ij,jk->ik", (upper_lp * fading, x_up )) + noise # (S_up @ x_up + n)
+        x_low = torch.einsum("ij,jk->ik", (lower_lp * fading, x_low)) + noise # (S_low @ x_low + n)
         return x_up, x_low
 
     def forward(self, x, upper_lp, lower_lp):
@@ -53,13 +53,13 @@ class TAirGNN(nn.Module):
         3. sum the output of each shift"""
 
         x_up, x_low = self.shift(x, x, upper_lp, lower_lp)
-        out_up  = torch.einsum("ij,kl->il", (x_up, self.up_weight[:,:,0]))
-        out_low = torch.einsum("ij,kl->il", (x_low, self.low_weight[:,:,0]))
+        out_up  = torch.einsum("ij,jk->ik", (x_up, self.up_weight[:,:,0]))
+        out_low = torch.einsum("ij,jk->ik", (x_low, self.low_weight[:,:,0]))
 
         for i in range(1, self.k):
             x_up, x_low = self.shift(x_up, x_low, upper_lp, lower_lp)
-            out_up += torch.einsum("ij,kl->il", (x_up, self.up_weight[:,:,i]))
-            out_low += torch.einsum("ij,kl->il", (x_low, self.low_weight[:,:,i]))
+            out_up += torch.einsum("ij,jk->ik", (x_up, self.up_weight[:,:,i]))
+            out_low += torch.einsum("ij,jk->ik", (x_low, self.low_weight[:,:,i]))
 
         return out_up + out_low
 
