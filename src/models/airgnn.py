@@ -8,18 +8,16 @@ class AirGNN(nn.Module):
         """function to add white noise to the input signal"""
         with torch.no_grad():
             z_clone = torch.detach(z)
-            snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
             x_power = torch.sum(z_clone ** 2) / torch.numel(z_clone)
-            var = x_power / snr_lin
+            var = x_power / self.snr_lin
             std = torch.sqrt(var)
             return torch.randn_like(z_clone) * std
-        
+
     def _channel_fading(self, adj):
         """function to generate channel fading"""
         with torch.no_grad():
-            s_air = torch.randn_like(adj, dtype=torch.complex64)
+            s_air = torch.randn_like(adj, dtype=torch.complex64) * torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
             s_air = torch.abs(s_air)
-            # s_air *= torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
             return s_air
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10):
@@ -27,11 +25,12 @@ class AirGNN(nn.Module):
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
+        self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
         self.k = k
         self.weight = nn.Parameter(torch.Tensor(c_in, c_out, k))
 
     def reset_parameters(self):
-        """function to initialize the weight matrix"""
+        """function to initialize the weight matrix as glorot"""
         nn.init.xavier_uniform_(self.weight)
 
     def shift(self, x, adj):
