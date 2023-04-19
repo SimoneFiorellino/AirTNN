@@ -1,5 +1,5 @@
 # custom
-data/
+datasets/
 images/
 demo*
 
@@ -152,7 +152,6 @@ dmypy.json
 
 # Lightning-Hydra-Template
 configs/local/default.yaml
-data/
 logs/
 .env
 .autoenv
