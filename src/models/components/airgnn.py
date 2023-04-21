@@ -28,24 +28,28 @@ class AirGNN(nn.Module):
         self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
         self.k = k
         self.weight = nn.Parameter(torch.Tensor(c_in, c_out, k), requires_grad=True)
-        # check the type of the values of weight matrix
-        print(self.weight.dtype)
 
     def reset_parameters(self):
         """function to initialize the weight matrix as glorot"""
         nn.init.xavier_uniform_(self.weight)
 
-    def shift(self, x, adj):
+    def shift(self, x, S):
         """function to shift the input signal:
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
+        # check if x and S have Nan values with try except
+        # if torch.isnan(x).any():
+        #     raise ValueError("x has Nan values")
+        if torch.isnan(S).any():
+            raise ValueError("S has Nan values")
 
-        S = adj# * self._channel_fading(adj) 
-        # print("x shift: ", x)
-        x = torch.einsum("in,bnc->bic", (S,x)) # S @ x.T
-        # print("x shift: ", x)
-        x = x# + self._white_noise(x)
+        #S = S * self._channel_fading(adj) 
+        x = torch.einsum("bin,bnc->bic", (S,x)) # S @ x.T
+        #x = x + self._white_noise(x)
+        if torch.isnan(x).any():
+            print("x has Nan values")
+            #raise ValueError("post shift x has Nan values")
         return x
 
     def forward(self, x, adj):
@@ -54,10 +58,10 @@ class AirGNN(nn.Module):
         2. apply the weight matrix to x
         3. sum the output of each shift"""
         x = self.shift(x, adj)
-        out = torch.einsum("bnu,uo->bno", (x, self.weight[:,:,0])) # x @ self.weight[:,:,0]
+        out = x @ self.weight[:,:,0] # torch.einsum("bnu,buo->bno", (x, self.weight[None,:,:,0])) # x @ self.weight[:,:,0]
         for i in range(1, self.k):
-            x = self.shift(x, adj)
-            out += torch.einsum("bnu,uo->bno", (x, self.weight[:,:,i])) # x @ self.weight[:,:,i]
+            #x = self.shift(x, adj)
+            out += x @ self.weight[:,:,0] # torch.einsum("bnu,uo->bno", (x, self.weight[:,:,i])) # x @ self.weight[:,:,i]
         return out
 
 if __name__ == '__main__':

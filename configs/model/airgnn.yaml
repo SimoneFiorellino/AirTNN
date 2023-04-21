@@ -1,7 +1,7 @@
 _targer_: models.sbm_moduel.SBMLitModule
 
 c_in: 1
-c_out: 32
+c_out: 64
 k: 1
 snr_db: 100
 

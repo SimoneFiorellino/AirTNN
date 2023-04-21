@@ -15,18 +15,25 @@ class AirGNN2Layer(nn.Module):
         self.snr_db = snr_db
         self.airgnn1 = AirGNN(c_in, c_out, k, snr_db)
         self.airgnn2 = AirGNN(c_out, c_out, k, snr_db)
-        self.fc = nn.Linear(c_out, 10, dtype=torch.float32)
-        self.A = A.cuda()
+        self.fc = nn.Linear(100, 10, dtype=torch.float32)
+
+        # compute symmetric normalization of adjacency matrix
+        D = torch.diag(torch.sum(A, dim=1))
+        D = torch.inverse(torch.sqrt(D))
+        A = torch.matmul(torch.matmul(D, A), D)
+
+        self.A = A[None,:,:].cuda()
+
+
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.airgnn1(x, self.A)
-
-        x = F.relu(x)
-        x = self.airgnn2(x, self.A)
-
-        x = F.relu(x)
-        x = x.mean(dim=1)
-
+        x = F.elu(x)
+        x = F.dropout(x, training=self.training)
+        # x = self.airgnn2(x, self.A)
+        # x = F.elu(x)
+        x = x.mean(dim=2)
+        #x = x.reshape(x.shape[0],-1)
+        x = F.dropout(x, training=self.training)
         x = self.fc(x)
-
         return x

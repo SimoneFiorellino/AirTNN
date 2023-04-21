@@ -14,29 +14,31 @@ from models.sbm_module import SBMLitModule
 log = logging.getLogger(__name__)
 os.environ['HYDRA_FULL_ERROR'] = '1'
 
-## If exist the dataset, load it. Otherwise, create it.
-if not os.path.exists('./topological_air_nn/datasets/sbm/sbm_dataset.pt'):
-    print("Create the dataset")
-    dataset = SBMDataset(
-        n_nodes=100,
-        community_size=10,
-        p_intra=0.8,
-        p_inter=0.1,
-        num_samples=15000
-    )
-    # Save the dataset
-    print("Save the dataset")
-    torch.save(dataset, './topological_air_nn/datasets/sbm/sbm_dataset.pt')
-    # Sace the adjacency matrix
-    print("Save the adjacency matrix")
-    torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')
-
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
 def main(cfg):
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
-    seed_everything(cfg.seed, workers=True)
+    #seed_everything(cfg.seed, workers=True)
+
+    ## If exist the dataset, load it. Otherwise, create it.
+    if not os.path.exists('./topological_air_nn/datasets/sbm/sbm_dataset.pt'):
+        print("Create the dataset")
+        dataset = SBMDataset(
+            n_nodes=100,
+            n_community=10,
+            p_intra=.8,
+            p_inter=.2,
+            num_samples=15000,
+            k_diffusion=1
+        )
+        #print(z)
+        # Save the dataset
+        print("Save the dataset")
+        torch.save(dataset, './topological_air_nn/datasets/sbm/sbm_dataset.pt')
+        # Sace the adjacency matrix
+        print("Save the adjacency matrix")
+        torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')
 
     print("Step 1: Load the dataset")
     logger = hydra.utils.instantiate(cfg.logger)

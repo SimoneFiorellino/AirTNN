@@ -18,40 +18,50 @@ class SBMDataset(Dataset):
 
     def _create_adj_matrix(self, community_size, p_intra, p_inter):
         """Create a stochastic block model adjacency matrix."""
-        sizes = [self.n_for_each_community for _ in range(community_size)]
+        sizes = [self.n_nodes_for_each_community for _ in range(community_size)]
         p = np.full((community_size, community_size), p_inter)
         np.fill_diagonal(p, p_intra)
-        G = nx.stochastic_block_model(sizes, p, seed=42)
+        G = nx.stochastic_block_model(sizes, p, seed=1418)
         out = torch.tensor(nx.to_numpy_array(G), dtype=torch.float32)
         max_eig = torch.linalg.eigh(out)[0][-1]
-        return out / max_eig
+        return out / max_eig, out
     
     def _create_diffused_impulse(self, source, k):
         """Create a diffused impulse from a source node."""
         impulse = torch.zeros(self.n_nodes)
         impulse[source] = 1
-        noise = white_noise(impulse, 40)
-        new_impulse = self.S[k,:,:] @ impulse + noise
+        new_impulse = self.S[k,:,:] @ impulse + white_noise(impulse, 40)
+        # check if the impulse has Nan values
+        if torch.isnan(new_impulse).any():
+            print("Nan values in the impulse")
         # return the transpose of new_impulse as torch.float32
         return new_impulse.reshape(self.n_nodes,1).type(torch.float32)
 
-    def __init__(self, n_nodes, community_size, p_intra, p_inter, num_samples):
+    def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion):
         """Initialize the dataset."""
+        self.k_diffusion = k_diffusion
         self.n_nodes = n_nodes
         self.num_samples = num_samples
-        self.n_for_each_community = n_nodes // community_size
-        self.adj_matrix = self._create_adj_matrix(community_size, p_intra, p_inter)
-        self.S = k_hop_adjacency_matrix(self.adj_matrix, 100)
+        self.n_nodes_for_each_community = n_nodes // n_community
+        self.adj_matrix, self.adj = self._create_adj_matrix(n_community, p_intra, p_inter)
+        print(self.adj_matrix)
 
-        list_communities = torch.arange(0, 10)
-        sources = list_communities * 10
+        # check if the adjacency matrix has Nan values
+        if torch.isnan(self.adj_matrix).any():
+            print("Nan values in the adjacency matrix")
+        self.S = k_hop_adjacency_matrix(self.adj_matrix, self.k_diffusion)
+        # check if the S matrix has Nan values
+        if torch.isnan(self.S).any():
+            print("Nan values in the S matrix")
+
+        list_communities = torch.arange(0, n_community)
+        sources = list_communities * self.n_nodes_for_each_community + 1
 
         self.samples = []
-        
         """Generate the samples"""
         for _ in range(num_samples):
-            k = torch.randint(0, 100, (1,))
-            label = torch.randint(0, len(sources), (1,))
+            k = torch.randint(0, self.k_diffusion, (1,))
+            label = torch.randint(0, n_community, (1,))
             impulse = self._create_diffused_impulse(sources[label], k)
             self.samples.append((impulse, label))
             

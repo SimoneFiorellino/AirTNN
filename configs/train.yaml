@@ -7,8 +7,8 @@ defaults:
   - model: airgnn
 #  - datamodule: sbm
 
-seed: 1234
-batch_size: 1
+seed: 42
+batch_size: 64
 
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger

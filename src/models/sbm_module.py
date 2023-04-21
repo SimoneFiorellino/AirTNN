@@ -40,12 +40,15 @@ class SBMLitModule(LightningModule):
 
         # Metrics
         self.criterion = torch.nn.CrossEntropyLoss()
+        # metric objects for calculating and averaging accuracy across batches
         self.train_acc = Accuracy(task="multiclass", num_classes=10)
         self.val_acc = Accuracy(task="multiclass", num_classes=10)
         self.test_acc = Accuracy(task="multiclass", num_classes=10)
+        # for averaging loss across batches
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
         self.test_loss = MeanMetric()
+        # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
         # save optimizer and scheduler
@@ -57,12 +60,13 @@ class SBMLitModule(LightningModule):
     
     def model_step(self, batch: Any):
         x, y = batch
+        #print(x[0,:,:], y[0])
         y = y.reshape(-1)
         logits = self.forward(x)
-        #print(logits, y)
+        # print(logits, y)
         loss = self.criterion(logits, y)
-        preds = torch.argmax(logits, dim=1)
-        return loss, preds, y
+        # preds = torch.argmax(logits, dim=1)
+        return loss, logits, y
     
     def on_train_start(self):
         self.val_loss.reset()
