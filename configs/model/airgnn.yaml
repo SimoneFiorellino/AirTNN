@@ -1,0 +1,17 @@
+_targer_: models.sbm_moduel.SBMLitModule
+
+c_in: 1
+c_out: 32
+k: 1
+snr_db: 100
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.001
+  weight_decay: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  mode: min
+  factor: 0.1
+  patience: 10

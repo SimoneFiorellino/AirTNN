@@ -1,0 +1,40 @@
+task_name: "train"
+
+defaults:
+  - _self_
+  - callbacks: default
+  - trainer: gpu
+  - model: airgnn
+#  - datamodule: sbm
+
+seed: 1234
+batch_size: 1
+
+logger:
+  _target_: pytorch_lightning.loggers.wandb.WandbLogger
+  save_dir: "logs"
+  offline: True # <---------------------------------------------------------------------------------------
+  id: null # pass correct id to resume experiment!
+  anonymous: null # enable anonymous logging
+  project: "topological_air_nn"
+  log_model: False # upload lightning ckpts
+  prefix: "" # a string to put at the beginning of metric keys
+  # entity: "" # set to name of your wandb team
+  group: "signal_diffusion"
+  tags: ['04/23'] # <---------------------------------------------------------------------------------------
+  notes: "testing"
+  job_type: ""
+
+paths:
+  root_dir: .
+  data_dir: ${paths.root_dir}/data/
+  log_dir: ${paths.root_dir}/logs/
+  output_dir: ${hydra:runtime.output_dir}
+  work_dir: ${hydra:runtime.cwd}
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${hydra.job.num}

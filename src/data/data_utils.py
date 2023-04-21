@@ -8,7 +8,7 @@ def white_noise(z, snr_db):
 
 def k_hop_adjacency_matrix(adj_matrix, k):
     n = adj_matrix.shape[0]
-    adj_tensor = torch.zeros((k, n, n)).double()
+    adj_tensor = torch.zeros((k, n, n))
     adj_tensor[0] = adj_matrix
     for i in range(1, k):
         adj_tensor[i] = torch.matmul(adj_matrix, adj_tensor[i-1])
