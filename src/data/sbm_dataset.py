@@ -30,6 +30,7 @@ class SBMDataset(Dataset):
         """Create a diffused impulse from a source node."""
         impulse = torch.zeros(self.n_nodes)
         impulse[source] = 1
+        print(self.S[k,:,:].shape)
         new_impulse = self.S[k,:,:] @ impulse + white_noise(impulse, 40)
         # check if the impulse has Nan values
         if torch.isnan(new_impulse).any():
@@ -73,7 +74,7 @@ class SBMDataset(Dataset):
     def __getitem__(self, idx):
         """Return the sample and label at the given index."""
         sample, label = self.samples[idx]
-        return sample, label
+        return sample, label, self.adj_matrix
     
     def get_adj_matrix(self):
         """Return the adjacency matrix."""

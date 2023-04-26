@@ -8,7 +8,6 @@ import torch
 
 from data.sbm_datamodule import SBMDataModule
 from data.sbm_dataset import SBMDataset
-from models.sbm_module import SBMLitModule
 
 
 log = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ os.environ['HYDRA_FULL_ERROR'] = '1'
 def main(cfg):
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
-    #seed_everything(cfg.seed, workers=True)
+    seed_everything(cfg.seed, workers=True)
 
     ## If exist the dataset, load it. Otherwise, create it.
     if not os.path.exists('./topological_air_nn/datasets/sbm/sbm_dataset.pt'):
@@ -30,7 +29,7 @@ def main(cfg):
             p_intra=.8,
             p_inter=.2,
             num_samples=15000,
-            k_diffusion=1
+            k_diffusion=100
         )
         #print(z)
         # Save the dataset
@@ -40,23 +39,14 @@ def main(cfg):
         print("Save the adjacency matrix")
         torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')
 
-    print("Step 1: Load the dataset")
+    print("Step 1: Create the logger")
     logger = hydra.utils.instantiate(cfg.logger)
 
     print("Step 2: Create the model")
-    model = SBMLitModule(
-        c_in=cfg.model.c_in,
-        c_out=cfg.model.c_out,
-        k=cfg.model.k,
-        snr_db=cfg.model.snr_db,
-        optimizer=cfg.model.optimizer,
-        scheduler=cfg.model.scheduler
-    )
+    model = hydra.utils.instantiate(cfg.net)
 
     print("Step 3: Create the datamodule")
-    datamodule = SBMDataModule(
-        batch_size=cfg.batch_size
-    )
+    datamodule = hydra.utils.instantiate(cfg.datamodule)
 
     print("Step 4: Create the trainer")
     trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)

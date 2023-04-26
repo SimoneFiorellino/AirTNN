@@ -1,0 +1,4 @@
+_target_: models.mlp_module.MLPLitModule
+
+hidden_dim: 128
+learning_rate: 0.001

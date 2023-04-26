@@ -31,10 +31,6 @@ class SBMDataModule(LightningDataModule):
     def num_classes(self):
         return 10
 
-    # def setup(self, stage=None):
-    #     self.train_set, self.val_set, self.test_set = random_split(
-    #         self.dataset, [10000, 2500, 2500]) 
-
     def train_dataloader(self):
         return DataLoader(
             dataset=self.data_train,
