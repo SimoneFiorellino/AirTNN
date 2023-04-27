@@ -28,15 +28,14 @@ class SBMDataset(Dataset):
     
     def _create_diffused_impulse(self, source, k):
         """Create a diffused impulse from a source node."""
-        impulse = torch.zeros(self.n_nodes)
+        impulse = torch.zeros(self.n_nodes,1)
         impulse[source] = 1
-        print(self.S[k,:,:].shape)
-        new_impulse = self.S[k,:,:] @ impulse + white_noise(impulse, 40)
+        new_impulse = self.S[k,:,:].reshape(self.n_nodes,self.n_nodes) @ impulse# + white_noise(impulse, 40)
         # check if the impulse has Nan values
         if torch.isnan(new_impulse).any():
             print("Nan values in the impulse")
         # return the transpose of new_impulse as torch.float32
-        return new_impulse.reshape(self.n_nodes,1).type(torch.float32)
+        return impulse.type(torch.float32)
 
     def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion):
         """Initialize the dataset."""

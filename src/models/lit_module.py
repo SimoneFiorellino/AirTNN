@@ -23,7 +23,6 @@ class LitModule(LightningModule):
         self.test_acc = Accuracy(task="multiclass", num_classes=10)
 
     def forward(self, x, A):
-        # use forward for inference/predictions
         embedding = self.backbone(x, A)
         return embedding
     
@@ -50,9 +49,6 @@ class LitModule(LightningModule):
         self.log("test/loss", loss, on_epoch=True)
         self.log("test/acc", self.test_acc(y_hat, y), on_epoch=True)
 
-    # def configure_optimizers(self):
-    #     # self.hparams available because we called self.save_hyperparameters()
-    #     return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.
         Normally you'd need one. But in the case of GANs or similar you might have multiple.

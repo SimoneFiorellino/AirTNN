@@ -20,6 +20,6 @@ class Backbone(torch.nn.Module):
         #x = F.dropout(x, p=0.5, training=self.training)
         x = torch.relu(self.l2(x, A))
         #x = F.dropout(x, p=0.5, training=self.training)
-        x = torch.relu(self.l3(x, A))
+        x = torch.relu(self.l3(x))
         x = x.mean(dim=1)
         return x

@@ -2,5 +2,17 @@ _target_: models.lit_module.LitModule
 
 backbone:
   _target_: models.components.gcn_backbone.Backbone
-  hidden_dim: 128
-learning_rate: 0.001
+  hidden_dim: 64
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
