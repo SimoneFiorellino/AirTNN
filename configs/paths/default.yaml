@@ -1,4 +1,4 @@
-root_dir: .
+root_dir: ./topological_air_nn
 data_dir: ${paths.root_dir}/data/
 log_dir: ${paths.root_dir}/logs/
 output_dir: ${hydra:runtime.output_dir}

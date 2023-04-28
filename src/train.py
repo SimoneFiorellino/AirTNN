@@ -8,11 +8,9 @@ import torch
 
 from data.sbm_datamodule import SBMDataModule
 from data.sbm_dataset import SBMDataset
-
-
-log = logging.getLogger(__name__)
 os.environ['HYDRA_FULL_ERROR'] = '1'
 
+log = logging.getLogger(__name__)
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
 def main(cfg):
@@ -21,7 +19,7 @@ def main(cfg):
     seed_everything(cfg.seed, workers=True)
 
     ## If exist the dataset, load it. Otherwise, create it.
-    if not os.path.exists('./topological_air_nn/datasets/sbm/sbm_dataset.pt'):
+    if not os.path.exists('./datasets/sbm/sbm_dataset.pt'):
         print("Create the dataset")
         dataset = SBMDataset(
             n_nodes=100,
@@ -29,21 +27,22 @@ def main(cfg):
             p_intra=.8,
             p_inter=.2,
             num_samples=15000,
-            k_diffusion=100
+            k_diffusion=10
         )
         #print(z)
         # Save the dataset
         print("Save the dataset")
         torch.save(dataset, './topological_air_nn/datasets/sbm/sbm_dataset.pt')
         # Sace the adjacency matrix
-        print("Save the adjacency matrix")
-        torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')
+        # print("Save the adjacency matrix")
+        # torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')
 
     print("Step 1: Create the logger")
     logger = hydra.utils.instantiate(cfg.logger)
+    logger.log_hyperparams(cfg)
 
     print("Step 2: Create the model")
-    model = hydra.utils.instantiate(cfg.net)
+    model = hydra.utils.instantiate(cfg.model)
 
     print("Step 3: Create the datamodule")
     datamodule = hydra.utils.instantiate(cfg.datamodule)
@@ -53,6 +52,9 @@ def main(cfg):
 
     print("Step 5: Train the model")
     trainer.fit(model=model, datamodule=datamodule)
+
+    print("Step 6: Test the model")
+    trainer.test(model=model, datamodule=datamodule)
 
 
 if __name__ == "__main__":

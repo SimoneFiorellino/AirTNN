@@ -1,18 +1,24 @@
 import torch
 
-def white_noise(z, snr_db):
-    snr_lin = 10 ** (snr_db / 10)  # SNRdb to linear
-    var = 1 / snr_lin
-    std = torch.sqrt(torch.Tensor([var]))
-    return torch.randn_like(z) * std
-
 # def white_noise(z, snr_db):
-#     z_clone = torch.detach(z)
-#     x_power = torch.sum(z_clone ** 2) / torch.numel(z_clone)
-#     snr_lin = 10 ** (snr_db / 10)
-#     var = x_power / snr_lin
-#     std = torch.sqrt(var)
-#     return torch.randn_like(z_clone) * std
+#     snr_lin = 10 ** (snr_db / 10)  # SNRdb to linear
+#     var = 1 / snr_lin
+#     std = torch.sqrt(torch.Tensor([var]))
+#     return torch.randn_like(z) * std
+
+def white_noise(z, snr_db):
+    z_clone = torch.detach(z)
+    x_power = torch.Tensor([1.]) / torch.numel(z_clone)
+    snr_lin = 10 ** (snr_db / 10)
+    var = x_power / snr_lin
+    std = torch.sqrt(var)
+    return torch.randn_like(z_clone) * std
+
+def channel_fading(adj):
+    """function to generate channel fading"""
+    s_air = torch.randn_like(adj, dtype=torch.complex64) * torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+    s_air = torch.abs(s_air)
+    return s_air
 
 # def k_hop_adjacency_matrix(adj_matrix, k):
 #     n = adj_matrix.shape[0]

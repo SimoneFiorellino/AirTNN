@@ -3,8 +3,8 @@ import torch
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 from torchmetrics.classification.accuracy import Accuracy
-
-
+from torchmetrics import MaxMetric, MeanMetric
+from typing import Any, List
 
 class LitModule(LightningModule):
     def __init__(
@@ -14,13 +14,21 @@ class LitModule(LightningModule):
             scheduler: torch.optim.lr_scheduler
         ):
         super().__init__()
-        self.save_hyperparameters(ignore=["backbone"])
+        self.save_hyperparameters(logger=True, ignore=["backbone"])
         self.backbone = backbone
 
         # metric objects for calculating and averaging accuracy across batches
         self.train_acc = Accuracy(task="multiclass", num_classes=10)
         self.val_acc = Accuracy(task="multiclass", num_classes=10)
         self.test_acc = Accuracy(task="multiclass", num_classes=10)
+
+        # for averaging loss across batches
+        self.train_loss = MeanMetric()
+        self.val_loss = MeanMetric()
+        self.test_loss = MeanMetric()
+
+        # for tracking best so far validation accuracy
+        self.val_acc_best = MaxMetric()
 
     def forward(self, x, A):
         embedding = self.backbone(x, A)
@@ -35,19 +43,35 @@ class LitModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, y_hat, y = self.model_step(batch, batch_idx)
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("train/acc", self.train_acc(y_hat, y), on_step=False, on_epoch=True, prog_bar=True)
+        self.train_loss(loss)
+        self.train_acc(y_hat, y)
+        self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss, y_hat, y = self.model_step(batch, batch_idx)
-        self.log("val/loss", loss, on_epoch=True)
-        self.log("val/acc", self.val_acc(y_hat, y), on_step=False, on_epoch=True, prog_bar=True)
+        self.val_loss(loss)
+        self.val_acc(y_hat, y)
+        self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         loss, y_hat, y = self.model_step(batch, batch_idx)
-        self.log("test/loss", loss, on_epoch=True)
-        self.log("test/acc", self.test_acc(y_hat, y), on_epoch=True)
+        self.test_loss(loss)
+        self.test_acc(y_hat, y)
+        self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
+
+    def on_train_start(self):
+        # by default lightning executes validation step sanity checks before training starts,
+        # so we need to make sure val_acc_best doesn't store accuracy from these checks
+        self.val_acc_best.reset()
+
+    def validation_epoch_end(self, outputs: List[Any]):
+        acc = self.val_acc.compute()  # get current val acc
+        self.val_acc_best(acc)  # update best so far val acc
+        self.log("val/acc_best", self.val_acc_best.compute(), prog_bar=True)
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

@@ -57,7 +57,6 @@ class AirGNN(nn.Module):
         for lin in self.lins[1:]:
             x = self.shift(x, adj)
             out = out + lin.forward(x)
-
         return out
 
 if __name__ == '__main__':

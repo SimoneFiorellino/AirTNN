@@ -6,7 +6,7 @@ defaults:
   - paths: default
   - hydra: default
   - trainer: gpu
-  - net: gcn
+  - model: airgnn
   - datamodule: sbm
 seed: 42
 logger:
@@ -17,6 +17,6 @@ logger:
   project: "airgnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['04/26'] # <---------------------------------------------------------------------------------------
+  tags: ['04/28'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""

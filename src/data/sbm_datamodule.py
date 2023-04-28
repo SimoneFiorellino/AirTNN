@@ -17,12 +17,16 @@ class SBMDataModule(LightningDataModule):
         super().__init__()
         self.save_hyperparameters(logger=False)
 
-        # Load the dataset
-        path = os.path.dirname(os.path.abspath(__file__))
-        # compute two step back in the path directory
-        path = os.path.dirname(os.path.dirname(path))
+        # # Load the dataset
+        # path = os.path.dirname(os.path.abspath(__file__))
+        # print(path)
+        # # compute two step back in the path directory
+        # path = os.path.dirname(os.path.dirname(path))
 
-        self.dataset = torch.load(path + '/datasets/sbm/sbm_dataset.pt')
+        self.dataset = torch.load('./datasets/sbm/sbm_dataset.pt')
+
+        # check the distribution of the labels
+        # print(self.frequency_labels())
 
         self.data_train, self.data_val, self.data_test = random_split(
             self.dataset, [10000, 2500, 2500]) 
@@ -30,6 +34,11 @@ class SBMDataModule(LightningDataModule):
     @property
     def num_classes(self):
         return 10
+    
+    def frequency_labels(self):
+        """Return the frequency of the labels in the dataset."""
+        labels = torch.cat([y for _, y, _ in self.dataset])
+        return torch.bincount(labels)
 
     def train_dataloader(self):
         return DataLoader(
