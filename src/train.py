@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 def main(cfg):
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
-    seed_everything(cfg.seed, workers=True)
+    # seed_everything(cfg.seed, workers=True)
 
     ## If exist the dataset, load it. Otherwise, create it.
     if not os.path.exists('./datasets/sbm/sbm_dataset.pt'):
@@ -27,12 +27,12 @@ def main(cfg):
             p_intra=.8,
             p_inter=.2,
             num_samples=15000,
-            k_diffusion=10
+            k_diffusion=100
         )
         #print(z)
         # Save the dataset
         print("Save the dataset")
-        torch.save(dataset, './topological_air_nn/datasets/sbm/sbm_dataset.pt')
+        torch.save(dataset, './datasets/sbm/sbm_dataset.pt')
         # Sace the adjacency matrix
         # print("Save the adjacency matrix")
         # torch.save(dataset.get_adj_matrix(), './topological_air_nn/datasets/sbm/sbm_adj_matrix.pt')

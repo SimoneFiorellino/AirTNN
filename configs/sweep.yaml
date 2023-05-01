@@ -1,28 +1,26 @@
 program: src/train.py
 args_no_hyphens: False
-method: bayes
+method: random
 metric:
-  name: val/acc_best
+  name: val/acc
   goal: minimize
 parameters:
   model.backbone.hidden_dim:
-    values: [8,16,32,64,128,256,512]
+    values: [128,256,512]
   model.backbone.k:
     values: [1,2,3,4,5]
   model.backbone.p:
-    values: [0.1,0.2,0.3,0.4,0.5]
-  model.optimizer.lr:
-    values: [0,01,0.001,0.0001]
+    values: [0,0.1,0.2,0.3,0.4,0.5]
   model.optimizer.weight_decay:
-    values: [0,0.9]
+    values: [0,0.001]
   datamodule.batch_size:
-    values: [64,128,256,512]
+    values: [128,256,512]
 
 early_terminate:
   type: hyperband
   s: 2
   eta: 3
-  max_iter: 30
+  max_iter: 10
 
 command:
   - ${env}

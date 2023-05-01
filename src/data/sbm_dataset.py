@@ -50,7 +50,8 @@ class SBMDataset(Dataset):
         """Create a diffused impulse from a source node."""
         impulse = torch.zeros(self.n_nodes,1)
         impulse[source] = 1
-        new_impulse = self.S[k,:,:].reshape(self.n_nodes,self.n_nodes) @ impulse + white_noise(impulse, 40) # torch.matrix_power(x, i+1)
+        new_impulse = self.S[k,:,:].reshape(self.n_nodes,self.n_nodes) @ impulse
+        new_impulse = new_impulse + white_noise(impulse, 40)
 
         # check if the impulse has Nan values
         if torch.isnan(new_impulse).any():

@@ -1,4 +1,4 @@
 _target_: data.sbm_datamodule.SBMDataModule
-batch_size: 128
+batch_size: 256
 num_workers: 0 
 pin_memory: False

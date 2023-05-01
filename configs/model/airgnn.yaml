@@ -2,10 +2,10 @@ _target_: models.lit_module.LitModule
 
 backbone:
   _target_: models.components.airgnn_backbone.Backbone
-  hidden_dim: 64
-  k: 3
-  snr_db: 100
-  p: 0.5
+  hidden_dim: 512
+  k: 5
+  snr_db: 40
+  p: .0
 
 optimizer:
   _target_: torch.optim.Adam

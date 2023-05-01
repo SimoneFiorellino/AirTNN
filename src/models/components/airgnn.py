@@ -42,9 +42,9 @@ class AirGNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-        #S = S * self._channel_fading(S) 
+        S = S * self._channel_fading(S) 
         x = torch.bmm(S,x)# torch.einsum("bin,bnc->bic", (S,x)) # S @ x.T # torch.bmm(S,x) #
-        #x = x + self._white_noise(x)
+        x = x + self._white_noise(x)
         return x
 
     def forward(self, x, adj):
