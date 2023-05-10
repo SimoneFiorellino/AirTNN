@@ -3,8 +3,9 @@ import torch
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 from torchmetrics.classification.accuracy import Accuracy
-from torchmetrics import MaxMetric, MeanMetric
+from torchmetrics import MaxMetric, MeanMetric, ConfusionMatrix
 from typing import Any, List
+    
 
 class LitModule(LightningModule):
     def __init__(
@@ -22,6 +23,9 @@ class LitModule(LightningModule):
         self.val_acc = Accuracy(task="multiclass", num_classes=10)
         self.test_acc = Accuracy(task="multiclass", num_classes=10)
 
+        # metric objects for calculating and averaging confusion matrix across batches for test set
+        self.test_confusion_matrix = ConfusionMatrix(task="multiclass", num_classes=10)
+
         # for averaging loss across batches
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
@@ -30,14 +34,14 @@ class LitModule(LightningModule):
         # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
-    def forward(self, x, A):
-        embedding = self.backbone(x, A)
+    def forward(self, x, low, up):
+        embedding = self.backbone(x, low, up)
         return embedding
     
     def model_step(self, batch, batch_idx):
-        x, y, A = batch
+        x, y, low, up, _ = batch
         y = y.reshape(-1)
-        y_hat = self.forward(x, A)
+        y_hat = self.forward(x, low, up)
         loss = F.cross_entropy(y_hat, y)
         return loss, y_hat, y
 
@@ -60,6 +64,7 @@ class LitModule(LightningModule):
         loss, y_hat, y = self.model_step(batch, batch_idx)
         self.test_loss(loss)
         self.test_acc(y_hat, y)
+        self.test_confusion_matrix(y_hat, y)
         self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("test/acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
 
@@ -72,6 +77,9 @@ class LitModule(LightningModule):
         acc = self.val_acc.compute()  # get current val acc
         self.val_acc_best(acc)  # update best so far val acc
         self.log("val/acc_best", self.val_acc_best.compute(), prog_bar=True)
+
+    def test_epoch_end(self, outputs: List[Any]):
+        self.log("test/confusion_matrix", self.test_confusion_matrix.compute(), prog_bar=True)
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

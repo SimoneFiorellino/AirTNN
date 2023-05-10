@@ -1,11 +1,5 @@
 import torch
 
-# def white_noise(z, snr_db):
-#     snr_lin = 10 ** (snr_db / 10)  # SNRdb to linear
-#     var = 1 / snr_lin
-#     std = torch.sqrt(torch.Tensor([var]))
-#     return torch.randn_like(z) * std
-
 def white_noise(z, snr_db):
     z_clone = torch.detach(z)
     x_power = torch.Tensor([1.]) / torch.numel(z_clone)

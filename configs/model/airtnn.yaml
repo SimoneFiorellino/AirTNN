@@ -1,10 +1,10 @@
 _target_: models.lit_module.LitModule
 
 backbone:
-  _target_: models.components.airgnn_backbone.Backbone
+  _target_: models.components.airtnn_backbone.Backbone
   hidden_dim: 64
-  k: 1
-  snr_db: 100
+  k: 5
+  snr_db: 1000
   p: .0
 
 optimizer:

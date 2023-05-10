@@ -1,0 +1,17 @@
+program: src/train.py
+args_no_hyphens: False
+method: grid
+metric:
+  name: val/acc
+  goal: minimize
+parameters:
+  seed:
+    values: [0,1,2]
+  model.backbone.snr_db:
+    values: [-10,0,10,20,40,60]
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}

@@ -7,7 +7,7 @@ class AirGNN(nn.Module):
     def _white_noise(self, z):
         """function to add white noise to the input signal"""
         with torch.no_grad():
-            z_clone = torch.detach(z)
+            z_clone = torch.detach(z[0,:,:])
             x_power = torch.sum(z_clone ** 2) / torch.numel(z_clone)
             var = x_power / self.snr_lin
             std = torch.sqrt(var)
@@ -16,7 +16,8 @@ class AirGNN(nn.Module):
     def _channel_fading(self, adj):
         """function to generate channel fading"""
         with torch.no_grad():
-            s_air = torch.randn_like(adj, dtype=torch.complex64) * torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+            adj_clone = torch.detach(adj[0,:,:])
+            s_air = torch.randn_like(adj_clone, dtype=torch.complex64) * self.fad_std
             s_air = torch.abs(s_air)
             return s_air
 
@@ -27,6 +28,7 @@ class AirGNN(nn.Module):
         self.snr_db = snr_db
         self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
         self.k = k
+        self.fad_std = torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
         self.lins = torch.nn.ModuleList([
             Linear(c_in, c_out, bias=False) for _ in range(k + 1)
         ])
@@ -42,9 +44,9 @@ class AirGNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-        S = S * self._channel_fading(S) 
-        x = torch.bmm(S,x)# torch.einsum("bin,bnc->bic", (S,x)) # S @ x.T # torch.bmm(S,x) #
-        x = x + self._white_noise(x)
+        S = S * self._channel_fading(S)[None,:,:]
+        x = torch.bmm(S,x)
+        x = x + self._white_noise(x)[None,:,:]
         return x
 
     def forward(self, x, adj):

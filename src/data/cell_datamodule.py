@@ -9,19 +9,16 @@ import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
 
-from data.sbm_dataset import SBMDataset
+from data.cell_sbm_dataset import CellDataset
 
 
-class SBMDataModule(LightningDataModule):
+class CellDataModule(LightningDataModule):
     def __init__(self, batch_size=64, num_workers=0, pin_memory=False):
         super().__init__()
         self.save_hyperparameters(logger=False)
 
-        self.dataset = torch.load('./datasets/sbm/sbm_dataset.pt')
-        print("sbm dataset loaded")
-
-        # check the distribution of the labels
-        # print(self.frequency_labels())
+        self.dataset = torch.load('./datasets/sbm/cell_dataset.pt')
+        print("cell dataset loaded")
         
         self.data_train, self.data_val, self.data_test = random_split(
             self.dataset, [10000, 2500, 2500]) 
@@ -63,4 +60,4 @@ class SBMDataModule(LightningDataModule):
         )
     
 if __name__ == "__main__":
-    _ = SBMDataModule()
+    _ = CellDataModule()
