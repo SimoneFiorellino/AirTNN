@@ -17,6 +17,6 @@ logger:
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['05/08', 'grid_sweep'] # <---------------------------------------------------------------------------------------
+  tags: ['05/10', 'grid_sweep'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""

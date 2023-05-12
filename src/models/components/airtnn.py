@@ -17,10 +17,31 @@ class AirTNN(nn.Module):
     def _channel_fading(self, s):
         """function to generate channel fading"""
         with torch.no_grad():
-            s_clone = torch.detach(s[0,:,:])
-            s_air = torch.randn_like(s_clone, dtype=torch.complex64) * self.cf_std
+            s_clone = torch.detach(s)
+            s_air = torch.randn_like(s_clone, dtype=torch.complex64) * self.fad_std
             s_air = torch.abs(s_air)
             return s_air
+        
+    def _full_channel_fading(self, s):
+        """function to generate channel fading"""
+        with torch.no_grad():
+            s_air = torch.randn(size=s.shape, dtype=torch.complex64, device='cuda') * self.cf_std
+            s_air = torch.abs(s_air)
+            return s_air
+
+    def _batch_mm(self, matrix, matrix_batch):
+        """
+        :param matrix: Sparse or dense matrix, size (m, n).
+        :param matrix_batch: Batched dense matrices, size (b, n, k).
+        :return: The batched matrix-matrix product, size (m, n) x (b, n, k) = (b, m, k).
+        """
+        batch_size = matrix_batch.shape[0]
+        # Stack the vector batch into columns. (b, n, k) -> (n, b, k) -> (n, b*k)
+        vectors = matrix_batch.transpose(0, 1).reshape(matrix.shape[1], -1)
+
+        # A matrix-matrix product is a batched matrix-vector product of the columns.
+        # And then reverse the reshaping. (m, n) x (n, b*k) = (m, b*k) -> (m, b, k) -> (b, m, k)
+        return torch.sparse.mm(matrix, vectors).reshape(matrix.shape[0], batch_size, -1).transpose(1, 0)
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10):
         super(AirTNN, self).__init__()
@@ -50,14 +71,15 @@ class AirTNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
+
         if self.snr_db == 1000:
-            x_up  = torch.bmm(upper_lp, x_up )
-            x_low = torch.bmm(lower_lp, x_low)
+            x_up = self._batch_mm(upper_lp, x_up)
+            x_low = self._batch_mm(lower_lp, x_low)
         else:
-            fading = self._channel_fading(upper_lp)[None,:,:]
+            fading = self._full_channel_fading(upper_lp)
             noise  = self._white_noise(x_up)[None,:,:]
-            x_up  = torch.bmm(upper_lp * fading, x_up ) + noise
-            x_low = torch.bmm(lower_lp * fading, x_low) + noise
+            x_up  = self._batch_mm(upper_lp * fading, x_up ) + noise
+            x_low = self._batch_mm(lower_lp * fading, x_low) + noise
         return x_up, x_low
 
     def forward(self, x, lower_lp, upper_lp):

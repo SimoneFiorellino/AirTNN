@@ -13,7 +13,6 @@ def edge_to_node_matrix(edges, nodes, one_indexed=True):
         j += 1
     return sigma1
 
-
 def edge_to_cycle_matrix(edges, cycles):
     sigma2 = torch.zeros((len(edges), len(cycles)), dtype=torch.float)
     edges = [e for e in edges]
@@ -27,7 +26,6 @@ def edge_to_cycle_matrix(edges, cycles):
                 sigma2[edges[(cycles[idx][i], cycles[idx][i - 1])]][idx] -= 1
     return sigma2
 
-
 def build_upper_features(lower_features, simplex_list):
     new_features = []
     for i in range(len(simplex_list)):
@@ -37,7 +35,6 @@ def build_upper_features(lower_features, simplex_list):
             idx = simplex_list[i]
         new_features.append(lower_features[idx].mean(axis=0))
     return torch.stack(new_features)
-
 
 def get_incidences(nodes, edge_list, G):
     cycle_list = nx.cycle_basis(G)

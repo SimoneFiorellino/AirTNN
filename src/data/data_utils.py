@@ -1,8 +1,16 @@
 import torch
 
+# def white_noise(z, snr_db):
+#     z_clone = torch.detach(z)
+#     x_power = torch.Tensor([1.]) / torch.numel(z_clone)
+#     snr_lin = 10 ** (snr_db / 10)
+#     var = x_power / snr_lin
+#     std = torch.sqrt(var)
+#     return torch.randn_like(z_clone) * std
+
 def white_noise(z, snr_db):
     z_clone = torch.detach(z)
-    x_power = torch.Tensor([1.]) / torch.numel(z_clone)
+    x_power = torch.sum(z_clone ** 2) / torch.numel(z_clone)
     snr_lin = 10 ** (snr_db / 10)
     var = x_power / snr_lin
     std = torch.sqrt(var)
@@ -31,6 +39,8 @@ def k_hop_adjacency_matrix(x, k):
 
     :return A
     """
+    if k == 0:
+        return torch.eye(x.shape[0])
     shape_a = x.shape[0]
     A = torch.empty((k, shape_a, shape_a))
 

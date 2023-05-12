@@ -1,9 +1,15 @@
 _target_: models.lit_module.LitModule
 
+batch_size: 256
+num_workers: 4 # 4*n_gpus
+pin_memory: True
+n_classes: 11
+
 backbone:
   _target_: models.components.airtnn_backbone.Backbone
-  hidden_dim: 64
-  k: 5
+  hidden_dim: 128
+  n_classes: 11
+  k: 1
   snr_db: 1000
   p: .0
 
@@ -18,4 +24,4 @@ scheduler:
   _partial_: true
   mode: min
   factor: 0.1
-  patience: 10
+  patience: 20

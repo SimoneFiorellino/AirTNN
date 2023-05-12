@@ -8,22 +8,20 @@ except:
     from components.airgnn import AirGNN
 
 class Backbone(torch.nn.Module):
-    def __init__(self, hidden_dim=128, k=1, snr_db=100, p=.0):
+    def __init__(self, hidden_dim=128, n_classes=11, k=1, snr_db=100, p=.0):
         super().__init__()
         self.p = p
         self.l1 = AirGNN(1, hidden_dim, k, snr_db)
         self.l2 = AirGNN(hidden_dim, hidden_dim, k, snr_db)
-        self.enc = torch.nn.LazyLinear(128)
-        self.out = torch.nn.LazyLinear(10)
+        self.enc = torch.nn.LazyLinear(1024)
+        self.out = torch.nn.LazyLinear(n_classes)
 
-    def forward(self, x, low, up):
+    def forward(self, x, low, up, hodge):
         # AirGNN
-        x = F.relu(self.l1(x, low))
-        x = F.dropout(x, p=self.p, training=self.training)
-        x = F.relu(self.l2(x, low))
-        x = F.dropout(x, p=self.p, training=self.training)
-        # MLP
-        x = self.out(F.relu(self.enc(x))) 
+        x = F.relu(self.l1(x, hodge))
+        x = F.relu(self.l2(x, hodge))
         # Average pooling -> [batch_size, 10] -> max vote
         x = x.mean(dim=1)
+        # MLP
+        x = self.out(F.relu(self.enc(x))) 
         return x

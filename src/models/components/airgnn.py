@@ -16,10 +16,24 @@ class AirGNN(nn.Module):
     def _channel_fading(self, adj):
         """function to generate channel fading"""
         with torch.no_grad():
-            adj_clone = torch.detach(adj[0,:,:])
+            adj_clone = torch.detach(adj)
             s_air = torch.randn_like(adj_clone, dtype=torch.complex64) * self.fad_std
             s_air = torch.abs(s_air)
             return s_air
+        
+    def _batch_mm(self, matrix, matrix_batch):
+        """
+        :param matrix: Sparse or dense matrix, size (m, n).
+        :param matrix_batch: Batched dense matrices, size (b, n, k).
+        :return: The batched matrix-matrix product, size (m, n) x (b, n, k) = (b, m, k).
+        """
+        batch_size = matrix_batch.shape[0]
+        # Stack the vector batch into columns. (b, n, k) -> (n, b, k) -> (n, b*k)
+        vectors = matrix_batch.transpose(0, 1).reshape(matrix.shape[1], -1)
+
+        # A matrix-matrix product is a batched matrix-vector product of the columns.
+        # And then reverse the reshaping. (m, n) x (n, b*k) = (m, b*k) -> (m, b, k) -> (b, m, k)
+        return torch.sparse.mm(matrix, vectors).reshape(matrix.shape[0], batch_size, -1).transpose(1, 0)
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10, bias: bool = True):
         super(AirGNN, self).__init__()
@@ -44,8 +58,12 @@ class AirGNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-        S = S * self._channel_fading(S)[None,:,:]
-        x = torch.bmm(S,x)
+        if self.snr_db == 1000:
+            return self._batch_mm(S,x)
+        
+        faded_values = S._values() * self._channel_fading(S._values())
+        S = torch.sparse_coo_tensor(S._indices(), faded_values, S.shape)
+        x = self._batch_mm(S,x)
         x = x + self._white_noise(x)[None,:,:]
         return x
 
