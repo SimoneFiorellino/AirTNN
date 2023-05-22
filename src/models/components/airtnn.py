@@ -72,7 +72,7 @@ class AirTNN(nn.Module):
         2. apply the shift operator to x
         3. add white noise"""
 
-        if self.snr_db == 1000:
+        if self.snr_db == 100:
             x_up = self._batch_mm(upper_lp, x_up)
             x_low = self._batch_mm(lower_lp, x_low)
         else:

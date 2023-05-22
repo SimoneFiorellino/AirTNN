@@ -57,10 +57,15 @@ class CellDataset(Dataset):
         adj_matrix = adj_matrix / max_eig
         return adj_matrix
     
+    def _fill_diagonal(self, adj_matrix):
+        """Fill the diagonal of the adjacency matrix."""
+        return adj_matrix.fill_diagonal_(1)
+    
     def _create_edge_signal(self):
         """Create an edge signal."""
-        node_component = torch.randn(self.n_nodes, 1)/torch.sqrt(torch.Tensor([self.n_nodes]))
-        cell_component = torch.randn(self.n_cycles, 1)/torch.sqrt(torch.Tensor([self.n_cycles]))
+        std = 2*torch.sqrt(torch.Tensor([self.len_edge_list]))
+        node_component = torch.randn(self.n_nodes, 1)/std
+        cell_component = torch.randn(self.n_cycles, 1)/std
         return (self.lower_incidence.T @ node_component) + (self.upper_incidence @ cell_component)
 
     def _truncated_normal(self, mean, std):
@@ -72,7 +77,7 @@ class CellDataset(Dataset):
 
     def _add_spike(self, signal, source, delta):
         """Add a spike to the signal. The is defined as a truncated normal distro."""
-        signal[source] = self._truncated_normal(0, delta)
+        signal[source] += self._truncated_normal(0, delta)
         return signal
 
     def _sample_source_and_label(self, communities):
@@ -116,7 +121,20 @@ class CellDataset(Dataset):
         diff_signal = self.S[k,:,:].reshape(self.len_edge_list,self.len_edge_list) @ signal
         return diff_signal + white_noise(signal, snr_db)
 
-    def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion, spike, snr_db):
+    def _get_shift_matrix(self, shift_flag):
+        if shift_flag == 'lower':
+            S = k_hop_adjacency_matrix(self.lower_laplacian, self.k_diffusion)
+        elif shift_flag == 'edge_adj':
+            S = k_hop_adjacency_matrix(self.edge_adj, self.k_diffusion)
+        elif shift_flag == 'upper':
+            S = k_hop_adjacency_matrix(self.upper_laplacian, self.k_diffusion)
+        elif shift_flag == 'hodge':    
+            S = k_hop_adjacency_matrix(self.hodge_laplacian, self.k_diffusion)
+        elif shift_flag == 'abs_hodge':
+            S = k_hop_adjacency_matrix(abs(self.hodge_laplacian), self.k_diffusion)
+        return S
+
+    def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion, spike, snr_db, n_spikes, shift_flag='edge_adj'):
 
         """Initialize the dataset."""
         self.k_diffusion = k_diffusion
@@ -147,19 +165,23 @@ class CellDataset(Dataset):
         self.hodge_laplacian = self.lower_laplacian + self.upper_laplacian
 
         # normalize the laplacians
+        if shift_flag == 'edge_adj':
+            edge_adj = self._fill_diagonal(self.lower_laplacian)
+            self.edge_adj = self._normalize_adj_matrix(edge_adj)
         self.hodge_laplacian = self._normalize_adj_matrix(self.hodge_laplacian)
         self.lower_laplacian = self._normalize_adj_matrix(self.lower_laplacian)
         self.upper_laplacian = self._normalize_adj_matrix(self.upper_laplacian)
+
+        # ---------------------
+        # Generate the S matrix
+        # ---------------------
+        self.S = self._get_shift_matrix(shift_flag)
 
         # convert the laplacians to sparse matrices
         self.sparse_hodge_laplacian = self.hodge_laplacian.to_sparse()
         self.sparse_lower_laplacian = self.lower_laplacian.to_sparse()
         self.sparse_upper_laplacian = self.upper_laplacian.to_sparse()
 
-        # ---------------------
-        # Generate the S matrix
-        # ---------------------
-        self.S = k_hop_adjacency_matrix(self.hodge_laplacian, self.k_diffusion)
         # check if the S matrix has Nan values
         if torch.isnan(self.S).any():
             print("Nan values in the S matrix")
@@ -167,11 +189,6 @@ class CellDataset(Dataset):
         # ---------------------
         # Source edges
         # ---------------------
-        # sources = []
-        # for i in range(n_community):
-        #     source = self._get_random_edge(self.communities[i], edge_list)
-        #     print(f"Source {i} edge: {source}")
-        #     sources.append(source)
         edge_subsets = self._create_edge_subsets(edge_list, self.communities)
         # random choice of one edge from each subset
         fixed_sources = [random.choice(edge_subsets[i]) for i in range(len(edge_subsets))]
@@ -183,27 +200,67 @@ class CellDataset(Dataset):
         # return the indices of the source edges in the edge_list
         fixes_source_idxs = [edge_list.index(fixed_sources[i]) for i in range(len(edge_subsets))]
         self.samples = []
+
+        # mean of edges in each community
+        mean_edges = self.len_edge_list // len(edge_subsets)
+        print("Mean edges: ", mean_edges)
+        # mean_edges / 100 * percentage
+        n_spikes = int(mean_edges * n_spikes)
+        print("Number of spikes: ", n_spikes)
+
         # ---------------------
         # Generate the samples
         # ---------------------
+        diffusion_hist = []
         for _ in tqdm(range(num_samples)):
+            # choose the diffusion order
             if self.k_diffusion == 0:
                 k = 0
             else:
                 k = torch.randint(0, self.k_diffusion, (1,))
+                # k = self.sample_rayleigh(max=self.k_diffusion)
+                diffusion_hist.append(k)
+            # choose the community
             n_community = torch.randint(0, len(edge_subsets), (1,))
+            # print(f"n_community: {n_community}")
             xp = self._create_edge_signal()
-            source = self._get_source_edges(edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=False)
-            xp = self._add_spike(xp, source, spike)
+            # print(torch.norm(xp))
+            # add the spikes
+            for i in range(n_spikes):
+                source = self._get_source_edges(edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=False)
+                xp = self._add_spike(xp, source, spike)
+                # # print the xp and the source
+                # print(f"xp: {xp}")
+                # print(f"source: {source}")
+
+            # diffusion and noise
             xp = self._diffused_signal(xp, k, snr_db)
             self.samples.append((xp, n_community))
-
+        # print some stats about the diffusion order
+        print("Diffusion order stats: ")
+        print(f"Mean: {sum(diffusion_hist) / len(diffusion_hist)}")
+        print(f"Max: {max(diffusion_hist)}")
+        print(f"Min: {min(diffusion_hist)}")
+        
+        
     def _get_source_edges(self, edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=True):
         if fixed:
             return fixes_source_idxs[n_community]
         else:
             return edge_list.index(random.choice(edge_subsets[n_community]))
             
+    def sample_rayleigh(self, max, scale=1, shape=(1,), dtype=torch.float32):
+
+        # Create a Student's t-distribution with 3 degrees of freedom
+        t_dist = torch.distributions.StudentT(df=10, scale=2)
+
+        # Generate a sample from the distribution
+        t_sample = abs(t_dist.sample())
+
+        while t_sample>=max:
+            t_sample = abs(t_dist.sample())
+
+        return t_sample.long()
 
     def __len__(self):
         """Return the length of the dataset."""
@@ -217,12 +274,15 @@ class CellDataset(Dataset):
 # test main function
 if __name__ == "__main__":
     dataset = CellDataset(
-        n_nodes = 10,
+        n_nodes = 20,
         n_community = 2, 
         p_intra = 0.8, 
-        p_inter = 0.2/10, 
+        p_inter = 0.2/2, 
         num_samples = 15, 
         k_diffusion = 100,
+        snr_db = 40,
+        spike = 1,
+        n_spikes = 0.8,
     )
 
     # Save the dataset

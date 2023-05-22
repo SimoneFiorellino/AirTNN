@@ -17,6 +17,19 @@ logger:
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['05/10', 'grid_sweep'] # <---------------------------------------------------------------------------------------
+  tags: ['05/22', 'weep'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""
+
+dataset:
+  _target_: data.cell_sbm_dataset.CellDataset
+  n_nodes: 70 
+  n_community: 10 
+  p_intra: 0.9 
+  p_inter: 0.01
+  num_samples: 15000 
+  k_diffusion: 50
+  spike: 1
+  snr_db: 40
+  n_spikes: .85
+  shift_flag: 'edge_adj'

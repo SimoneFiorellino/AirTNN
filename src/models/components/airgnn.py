@@ -58,7 +58,7 @@ class AirGNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-        if self.snr_db == 1000:
+        if self.snr_db == 100:
             return self._batch_mm(S,x)
         
         faded_values = S._values() * self._channel_fading(S._values())
