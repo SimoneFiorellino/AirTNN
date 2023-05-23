@@ -11,8 +11,9 @@ backbone:
   hidden_dim_ffnn: 1024
   n_classes: 11
   k: 1
-  snr_db: 100
+  snr_db: 40
   p: .3
+  delta: 0.707
 
 optimizer:
   _target_: torch.optim.Adam

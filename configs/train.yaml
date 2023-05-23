@@ -12,12 +12,12 @@ seed: 42
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
   save_dir: "logs"
-  offline: True # <---------------------------------------------------------------------------------------
+  offline: False # <---------------------------------------------------------------------------------------
   id: null # pass correct id to resume experiment!
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['05/22', 'weep'] # <---------------------------------------------------------------------------------------
+  tags: ['05/23', 'delta_sweep'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""
 

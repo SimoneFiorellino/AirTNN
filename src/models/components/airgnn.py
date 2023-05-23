@@ -17,7 +17,14 @@ class AirGNN(nn.Module):
         """function to generate channel fading"""
         with torch.no_grad():
             adj_clone = torch.detach(adj)
-            s_air = torch.randn_like(adj_clone, dtype=torch.complex64) * self.fad_std
+            s_air = torch.randn_like(adj_clone, dtype=torch.complex64) * self.delta
+            s_air = torch.abs(s_air)
+            return s_air
+        
+    def _full_channel_fading(self, s):
+        """function to generate channel fading"""
+        with torch.no_grad():
+            s_air = torch.randn(size=s.shape, dtype=torch.complex64, device='cuda') * self.delta
             s_air = torch.abs(s_air)
             return s_air
         
@@ -35,14 +42,17 @@ class AirGNN(nn.Module):
         # And then reverse the reshaping. (m, n) x (n, b*k) = (m, b*k) -> (m, b, k) -> (b, m, k)
         return torch.sparse.mm(matrix, vectors).reshape(matrix.shape[0], batch_size, -1).transpose(1, 0)
 
-    def __init__(self, c_in, c_out, k = 1, snr_db = 10, bias: bool = True):
+    def __init__(self, c_in, c_out, k = 1, snr_db = 10, bias: bool = True, delta = None):
         super(AirGNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
         self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
         self.k = k
-        self.fad_std = torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+        if delta is None:
+            self.delta = torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+        else:
+            self.delta = torch.tensor(delta, dtype=torch.float32)
         self.lins = torch.nn.ModuleList([
             Linear(c_in, c_out, bias=False) for _ in range(k + 1)
         ])
@@ -61,10 +71,9 @@ class AirGNN(nn.Module):
         if self.snr_db == 100:
             return self._batch_mm(S,x)
         
-        faded_values = S._values() * self._channel_fading(S._values())
-        S = torch.sparse_coo_tensor(S._indices(), faded_values, S.shape)
-        x = self._batch_mm(S,x)
-        x = x + self._white_noise(x)[None,:,:]
+        fading = self._full_channel_fading(S)
+        noise = self._white_noise(x)[None,:,:]
+        x = self._batch_mm(S * fading, x) + noise
         return x
 
     def forward(self, x, adj):

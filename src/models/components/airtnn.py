@@ -18,14 +18,14 @@ class AirTNN(nn.Module):
         """function to generate channel fading"""
         with torch.no_grad():
             s_clone = torch.detach(s)
-            s_air = torch.randn_like(s_clone, dtype=torch.complex64) * self.fad_std
+            s_air = torch.randn_like(s_clone, dtype=torch.complex64) * self.cf_std
             s_air = torch.abs(s_air)
             return s_air
         
     def _full_channel_fading(self, s):
         """function to generate channel fading"""
         with torch.no_grad():
-            s_air = torch.randn(size=s.shape, dtype=torch.complex64, device='cuda') * self.cf_std
+            s_air = torch.randn(size=s.shape, dtype=torch.complex64, device='cuda') * self.delta
             s_air = torch.abs(s_air)
             return s_air
 
@@ -43,14 +43,18 @@ class AirTNN(nn.Module):
         # And then reverse the reshaping. (m, n) x (n, b*k) = (m, b*k) -> (m, b, k) -> (b, m, k)
         return torch.sparse.mm(matrix, vectors).reshape(matrix.shape[0], batch_size, -1).transpose(1, 0)
 
-    def __init__(self, c_in, c_out, k = 1, snr_db = 10):
+    def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = None):
         super(AirTNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
         self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear        
         self.k = k
-        self.cf_std = torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+        if delta is None:
+            self.delta = torch.sqrt(torch.tensor(0.5, dtype=torch.float32)) # 0.707
+        else:
+            self.delta = torch.tensor(delta, dtype=torch.float32)
+            
         self.up_lins = torch.nn.ModuleList([
             Linear(c_in, c_out, bias=False) for _ in range(k + 1)
         ])
@@ -71,7 +75,6 @@ class AirTNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-
         if self.snr_db == 100:
             x_up = self._batch_mm(upper_lp, x_up)
             x_low = self._batch_mm(lower_lp, x_low)

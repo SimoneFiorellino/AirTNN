@@ -15,11 +15,11 @@ log = logging.getLogger(__name__)
 def main(cfg):
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
-    # seed_everything(cfg.seed, workers=True)
+    seed_everything(cfg.seed, workers=True)
 
     # check if the dataset do not exists
     # if not os.path.exists('./datasets/sbm/cell_dataset.pt'):
-    if True:
+    if False:
         print("Step 0: Create the dataset")
         dataset = hydra.utils.instantiate(cfg.dataset)
         torch.save(dataset, './datasets/sbm/cell_dataset.pt')

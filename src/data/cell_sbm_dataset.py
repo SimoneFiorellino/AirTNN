@@ -133,6 +133,26 @@ class CellDataset(Dataset):
         elif shift_flag == 'abs_hodge':
             S = k_hop_adjacency_matrix(abs(self.hodge_laplacian), self.k_diffusion)
         return S
+    
+    def _get_source_edges(self, edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=True):
+        if fixed:
+            return fixes_source_idxs[n_community]
+        else:
+            return edge_list.index(random.choice(edge_subsets[n_community]))
+            
+    def _sample_k_from(self, max, scale=2.5, shape=(1,), dtype=torch.float32):
+
+        # Create a Student's t-distribution with 3 degrees of freedom
+        t_dist = torch.distributions.StudentT(df=10, scale=scale)
+
+        # Generate a sample from the distribution
+        t_sample = abs(t_dist.sample())
+
+        while t_sample>=max:
+            t_sample = abs(t_dist.sample())
+
+        return t_sample.long()
+
 
     def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion, spike, snr_db, n_spikes, shift_flag='edge_adj'):
 
@@ -217,8 +237,8 @@ class CellDataset(Dataset):
             if self.k_diffusion == 0:
                 k = 0
             else:
-                k = torch.randint(0, self.k_diffusion, (1,))
-                # k = self.sample_rayleigh(max=self.k_diffusion)
+                # k = torch.randint(0, self.k_diffusion, (1,))
+                k = self._sample_k_from(max=self.k_diffusion)
                 diffusion_hist.append(k)
             # choose the community
             n_community = torch.randint(0, len(edge_subsets), (1,))
@@ -241,27 +261,7 @@ class CellDataset(Dataset):
         print(f"Mean: {sum(diffusion_hist) / len(diffusion_hist)}")
         print(f"Max: {max(diffusion_hist)}")
         print(f"Min: {min(diffusion_hist)}")
-        
-        
-    def _get_source_edges(self, edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=True):
-        if fixed:
-            return fixes_source_idxs[n_community]
-        else:
-            return edge_list.index(random.choice(edge_subsets[n_community]))
-            
-    def sample_rayleigh(self, max, scale=1, shape=(1,), dtype=torch.float32):
-
-        # Create a Student's t-distribution with 3 degrees of freedom
-        t_dist = torch.distributions.StudentT(df=10, scale=2)
-
-        # Generate a sample from the distribution
-        t_sample = abs(t_dist.sample())
-
-        while t_sample>=max:
-            t_sample = abs(t_dist.sample())
-
-        return t_sample.long()
-
+         
     def __len__(self):
         """Return the length of the dataset."""
         return self.num_samples

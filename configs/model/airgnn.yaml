@@ -7,11 +7,13 @@ n_classes: 11
 
 backbone:
   _target_: models.components.airgnn_backbone.Backbone
-  hidden_dim: 128
+  hidden_dim: 64
+  hidden_dim_ffnn: 1024
   n_classes: 11
   k: 1
-  snr_db: 1000
-  p: .0
+  snr_db: 100
+  p: .3
+  delta: 0.707
 
 optimizer:
   _target_: torch.optim.Adam
