@@ -6,18 +6,18 @@ defaults:
   - paths: default
   - hydra: default
   - trainer: gpu
-  - model: airtnn
+  - model: airgnn
   - datamodule: cell_sbm
 seed: 42
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
   save_dir: "logs"
-  offline: True # <---------------------------------------------------------------------------------------
+  offline: False # <---------------------------------------------------------------------------------------
   id: null # pass correct id to resume experiment!
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['05/24', 'delta_sweep', 'airgnn'] # <---------------------------------------------------------------------------------------
+  tags: ['05/24', 'delta_sweep', 'airgnn', 'k1'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""
 
