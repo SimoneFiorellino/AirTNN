@@ -18,8 +18,8 @@ class Backbone(torch.nn.Module):
 
     def forward(self, x, low, up, hodge):
         # AirGNN
-        x = F.relu(self.l1(x, hodge))
-        x = F.relu(self.l2(x, hodge))
+        x = F.relu(self.l1(x, low))
+        x = F.relu(self.l2(x, low))
         x = F.dropout(x, p=self.p, training=self.training)
         # Average pooling -> [batch_size, 10] -> max vote
         #x = x.mean(dim=1)

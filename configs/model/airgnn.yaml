@@ -10,8 +10,8 @@ backbone:
   hidden_dim: 64
   hidden_dim_ffnn: 1024
   n_classes: 11
-  k: 1
-  snr_db: 100
+  k: 5
+  snr_db: 40
   p: .3
   delta: 0.707
 

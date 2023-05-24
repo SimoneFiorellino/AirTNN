@@ -42,7 +42,7 @@ class AirGNN(nn.Module):
         # And then reverse the reshaping. (m, n) x (n, b*k) = (m, b*k) -> (m, b, k) -> (b, m, k)
         return torch.sparse.mm(matrix, vectors).reshape(matrix.shape[0], batch_size, -1).transpose(1, 0)
 
-    def __init__(self, c_in, c_out, k = 1, snr_db = 10, bias: bool = True, delta = None):
+    def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = None):
         super(AirGNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
@@ -50,9 +50,10 @@ class AirGNN(nn.Module):
         self.snr_lin = 10 ** (self.snr_db / 10)  # SNRdb to linear
         self.k = k
         if delta is None:
-            self.delta = torch.sqrt(torch.tensor(0.5, dtype=torch.float32))
+            self.delta = torch.sqrt(torch.tensor(0.5, dtype=torch.float32)) # 0.707
         else:
             self.delta = torch.tensor(delta, dtype=torch.float32)
+
         self.lins = torch.nn.ModuleList([
             Linear(c_in, c_out, bias=False) for _ in range(k + 1)
         ])
@@ -72,8 +73,8 @@ class AirGNN(nn.Module):
             return self._batch_mm(S,x)
         
         fading = self._full_channel_fading(S)
-        noise = self._white_noise(x)[None,:,:]
-        x = self._batch_mm(S * fading, x) + noise
+        x = self._batch_mm(S * fading, x) + self._white_noise(x)[None,:,:]
+        
         return x
 
     def forward(self, x, adj):

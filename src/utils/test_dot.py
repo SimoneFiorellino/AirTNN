@@ -20,9 +20,20 @@ sparse_y = y.to_sparse()
 
 out1 = _batch_mm(sparse_y, x)
 out2 = torch.matmul(y, x)
+
 print(out1.shape)
 print(out2.shape)
 print(torch.allclose(out1, out2))
+print(out1)
+print(out2)
+
+print('#############################################')
+
+out1 = sparse_y * x
+out2 = y * x
+
+print(out1.shape)
+print(out2.shape)
 print(out1)
 print(out2)
 
