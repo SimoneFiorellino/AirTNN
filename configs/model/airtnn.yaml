@@ -13,7 +13,7 @@ backbone:
   k: 1
   snr_db: 100
   p: .3
-  delta: 0.707
+  delta: 1
 
 optimizer:
   _target_: torch.optim.Adam

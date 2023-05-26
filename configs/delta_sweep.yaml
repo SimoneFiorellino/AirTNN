@@ -8,7 +8,9 @@ parameters:
   seed:
     values: [0,1,2,3,4]
   model.backbone.delta:
-    values: [.25,.5,.75,1.0,1.5,2.0,2.5]
+    values: [.5,.75,1.0,1.5,2.0,2.5]
+  model.backbone.snr_db:
+    values: [0,10,20,40,60,80]
 
 command:
   - ${env}

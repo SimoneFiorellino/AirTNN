@@ -1,14 +1,12 @@
 task_name: "train"
-
 defaults:
   - _self_
   - callbacks: default
   - paths: default
   - hydra: default
   - trainer: gpu
-  - model: airgnn
+  - model: airtnn # <---------------------------------------------------------------------------------------
   - datamodule: cell_sbm
-seed: 42
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
   save_dir: "logs"
@@ -17,9 +15,11 @@ logger:
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: "signal_diffusion"
-  tags: ['05/24', 'delta_sweep', 'airgnn', 'k1'] # <---------------------------------------------------------------------------------------
+  tags: ['05/25', 'heat_map', 'airtnn'] # <---------------------------------------------------------------------------------------
   notes: "testing"
   job_type: ""
+
+seed: 42
 
 dataset:
   _target_: data.cell_sbm_dataset.CellDataset
