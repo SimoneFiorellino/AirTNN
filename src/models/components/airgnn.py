@@ -54,7 +54,7 @@ class AirGNN(nn.Module):
         self.lins = torch.nn.ModuleList([
             Linear(c_in, c_out, bias=False) for _ in range(k + 1)
         ])
-
+        self.h_lin = Linear(c_in, c_out, bias=False)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -74,17 +74,17 @@ class AirGNN(nn.Module):
         
         return x
 
-    def forward(self, x, adj):
+    def forward(self, x_in, adj):
         """function to forward the input signal:
         1. shift the input signal
         2. apply the weight matrix to x
         3. sum the output of each shift"""
-        x = self.shift(x, adj)
+        x = self.shift(x_in, adj)
         out = self.lins[0].forward(x)
         for lin in self.lins[1:]:
             x = self.shift(x, adj)
             out = out + lin.forward(x)
-        return out
+        return out# + self.h_lin.forward(x_in)
 
 if __name__ == '__main__':
     # test

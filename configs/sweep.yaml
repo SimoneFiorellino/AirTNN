@@ -5,14 +5,18 @@ metric:
   name: val/acc
   goal: minimize
 parameters:
+  model:
+    values: [airtnn,airgnn]
   model.backbone.hidden_dim:
-    values: [64,128]
+    values: [64,32,16]
   model.backbone.k:
-    values: [1,3,5]
-  model.optimizer.lr:
-    values: [0.01,0.001]
+    values: [1,5]
+  model.backbone.p:
+    values: [.0,.3]
+  model.backbone.snr_db:
+    values: [100,80]
   model.batch_size:
-    values: [128,256]
+    values: [128]
   
 
 # early_terminate:

@@ -1,19 +1,20 @@
 _target_: models.lit_module.LitModule
 
-batch_size: 256
+batch_size: 128
 num_workers: 4 # 4*n_gpus
 pin_memory: True
 n_classes: 11
+validation_flag: True
 
 backbone:
   _target_: models.components.airgnn_backbone.Backbone
-  hidden_dim: 64
   hidden_dim_ffnn: 1024
   n_classes: 11
-  k: 1
-  snr_db: 40
+  hidden_dim: 64
+  k: 5
+  snr_db: 100
   p: .3
-  delta: 0.707
+  delta: 1
 
 optimizer:
   _target_: torch.optim.Adam

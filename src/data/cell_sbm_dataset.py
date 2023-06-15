@@ -17,8 +17,12 @@ except:
     from cell_utils import get_incidences 
 
 
-class CellDataset(Dataset):
+"""
+TODO: clean the code
+"""
 
+
+class CellDataset(Dataset):
     """A dataset of stochastic block model graphs."""
     torch.manual_seed(42)
 
@@ -43,14 +47,14 @@ class CellDataset(Dataset):
         out = torch.tensor(nx.to_numpy_array(G), dtype=torch.float32)
         # normalize the adjacency matrix
         # out.fill_diagonal_(1)
-        # out = self._normalize_adj_matrix(out)
+        # out = self._spectral_normalization(out)
 
         if torch.isnan(out).any():
             print("Nan values in the impulse")
 
         return out, communities, G
 
-    def _normalize_adj_matrix(self, adj_matrix):
+    def _spectral_normalization(self, adj_matrix):
         """Normalize the adjacency matrix."""
         # normalize the adjacency matrix
         max_eig = torch.linalg.eigh(adj_matrix)[0][-1]
@@ -141,7 +145,7 @@ class CellDataset(Dataset):
             return edge_list.index(random.choice(edge_subsets[n_community]))
             
     def _sample_k_from(self, max, scale=2.5, shape=(1,), dtype=torch.float32):
-
+        # scale 2.5 
         # Create a Student's t-distribution with 3 degrees of freedom
         t_dist = torch.distributions.StudentT(df=10, scale=scale)
 
@@ -153,8 +157,43 @@ class CellDataset(Dataset):
 
         return t_sample.long()
 
+    def _support_of_matrix(self, matrix):
+        """Return the support of a matrix. Diagonal is not included."""
+        matrix.fill_diagonal_(0)
+        return matrix.ne(0).float()
+    
+    def _symmetric_normalization(self, matrix):
+        """Return the symmetric normalization of a matrix."""
+        matrix.fill_diagonal_(0)
+        degrees = matrix.sum(dim=1)
+        degrees[degrees == 0] = 1
+        degrees = degrees.pow(-0.5)
+        degrees = degrees.view(-1, 1)
+        return degrees * matrix * degrees.T
+    
+    def _stochastic_normalization(self, matrix):
+        """Return the stochastic normalization of a matrix."""
+        matrix.fill_diagonal_(0)
+        degrees = matrix.sum(dim=1)
+        degrees[degrees == 0] = 1
+        degrees = degrees.pow(-1)
+        degrees = degrees.view(-1, 1)
+        return degrees * matrix
 
-    def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion, spike, snr_db, n_spikes, shift_flag='edge_adj'):
+    def _matrix_normalization(self, matrix, ntype='identity'):
+        """Return the stochastic normalization of a matrix."""
+        if ntype == 'identity':
+            return matrix
+        elif ntype == 'symmetric':
+            return self._symmetric_normalization(matrix)
+        elif ntype == 'stochastic':
+            return self._stochastic_normalization(matrix)
+        elif ntype == 'spectral':
+            return self._spectral_normalization(matrix)  
+
+    def __init__(self, n_nodes, n_community, p_intra, p_inter, num_samples, k_diffusion, spike, snr_db, n_spikes, 
+                 shift_flag='edge_adj',
+                 ntype='identity'):
 
         """Initialize the dataset."""
         self.k_diffusion = k_diffusion
@@ -186,11 +225,14 @@ class CellDataset(Dataset):
 
         # normalize the laplacians
         if shift_flag == 'edge_adj':
-            edge_adj = self._fill_diagonal(self.lower_laplacian)
-            self.edge_adj = self._normalize_adj_matrix(edge_adj)
-        self.hodge_laplacian = self._normalize_adj_matrix(self.hodge_laplacian)
-        self.lower_laplacian = self._normalize_adj_matrix(self.lower_laplacian)
-        self.upper_laplacian = self._normalize_adj_matrix(self.upper_laplacian)
+            edge_adj = self._support_of_matrix(self.lower_laplacian)
+            edge_adj = self._fill_diagonal(edge_adj)
+            self.edge_adj = self._matrix_normalization(edge_adj, 'spectral')
+            # edge_adj = self._fill_diagonal(self.lower_laplacian)
+            # self.edge_adj = self._spectral_normalization(edge_adj)
+        self.hodge_laplacian = self._spectral_normalization(self.hodge_laplacian)
+        self.lower_laplacian = self._spectral_normalization(self.lower_laplacian)
+        self.upper_laplacian = self._spectral_normalization(self.upper_laplacian)
 
         # ---------------------
         # Generate the S matrix
@@ -198,9 +240,10 @@ class CellDataset(Dataset):
         self.S = self._get_shift_matrix(shift_flag)
 
         # convert the laplacians to sparse matrices
-        self.sparse_hodge_laplacian = self.hodge_laplacian.to_sparse()
-        self.sparse_lower_laplacian = self.lower_laplacian.to_sparse()
-        self.sparse_upper_laplacian = self.upper_laplacian.to_sparse()
+        # fill the diagonal to 0 -> compute the support -> to sparse
+        self.sparse_hodge_laplacian = self._matrix_normalization(self._support_of_matrix(self.hodge_laplacian), ntype).to_sparse()
+        self.sparse_lower_laplacian = self._matrix_normalization(self._support_of_matrix(self.lower_laplacian), ntype).to_sparse()
+        self.sparse_upper_laplacian = self._matrix_normalization(self._support_of_matrix(self.upper_laplacian), ntype).to_sparse()
 
         # check if the S matrix has Nan values
         if torch.isnan(self.S).any():
@@ -232,7 +275,7 @@ class CellDataset(Dataset):
         # Generate the samples
         # ---------------------
         diffusion_hist = []
-        for _ in tqdm(range(num_samples)):
+        for i in tqdm(range(num_samples)):
             # choose the diffusion order
             if self.k_diffusion == 0:
                 k = 0
@@ -244,7 +287,6 @@ class CellDataset(Dataset):
             n_community = torch.randint(0, len(edge_subsets), (1,))
             # print(f"n_community: {n_community}")
             xp = self._create_edge_signal()
-            # print(torch.norm(xp))
             # add the spikes
             for i in range(n_spikes):
                 source = self._get_source_edges(edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=False)
@@ -273,6 +315,7 @@ class CellDataset(Dataset):
 
 # test main function
 if __name__ == "__main__":
+
     dataset = CellDataset(
         n_nodes = 20,
         n_community = 2, 
@@ -287,25 +330,3 @@ if __name__ == "__main__":
 
     # Save the dataset
     torch.save(dataset, './datasets/sbm/cell_dataset_demo.pt')
-
-
-    # def _get_random_edge(self, node_set, edge_list):
-    #     valid_edges = [edge for edge in edge_list if edge[0] in node_set and edge[1] in node_set]
-    #     if len(valid_edges) == 0:
-    #         raise ValueError("No valid edges found with the given node set.")
-    #     random_edge = random.choice(valid_edges)
-    #     return random_edge
-    
-    # def _create_diffused_impulse(self, source, k):
-    #     """Create a diffused impulse from a source node."""
-    #     impulse = torch.zeros(self.len_edge_list,1)
-    #     impulse[source] = 1
-    #     new_impulse = self.S[k,:,:].reshape(self.len_edge_list,self.len_edge_list) @ impulse
-    #     new_impulse = new_impulse + white_noise(impulse, 40)
-
-    #     # check if the impulse has Nan values
-    #     if torch.isnan(new_impulse).any():
-    #         print("Nan values in the impulse")
-
-    #     # return the transpose of new_impulse as torch.float32
-    #     return new_impulse.type(torch.float32)

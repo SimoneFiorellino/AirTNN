@@ -5,7 +5,7 @@ defaults:
   - paths: default
   - hydra: default
   - trainer: gpu
-  - model: airtnn # <---------------------------------------------------------------------------------------
+  - model: airgnn # <---------------------------------------------------------------------------------------
   - datamodule: cell_sbm
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
@@ -14,9 +14,9 @@ logger:
   id: null # pass correct id to resume experiment!
   project: "airtnn"
   log_model: False # upload lightning ckpts
-  group: "signal_diffusion"
-  tags: ['05/25', 'heat_map', 'airtnn'] # <---------------------------------------------------------------------------------------
-  notes: "testing"
+  group: ""
+  tags: ['06/15', 'spectral'] # <---------------------------------------------------------------------------------------
+  notes: "paper_simulation"
   job_type: ""
 
 seed: 42
@@ -33,3 +33,4 @@ dataset:
   snr_db: 40
   n_spikes: .85
   shift_flag: 'edge_adj'
+  ntype: 'spectral'

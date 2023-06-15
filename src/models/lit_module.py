@@ -21,6 +21,7 @@ class LitModule(LightningModule):
             num_workers: int = 0,
             pin_memory: bool = False,
             n_classes: int = 10,
+            validation_flag: bool = True,
         ):
         super().__init__()
 
@@ -36,13 +37,15 @@ class LitModule(LightningModule):
         print("cell dataset loaded")
 
         # load the laplacians on the gpu:0
-        self.hodge = self.dataset.sparse_hodge_laplacian.to(torch.cuda.current_device())
+        # self.hodge = self.dataset.sparse_hodge_laplacian.to(torch.cuda.current_device())
         self.low = self.dataset.sparse_lower_laplacian.to(torch.cuda.current_device())
         self.up = self.dataset.sparse_upper_laplacian.to(torch.cuda.current_device())
 
         # split dataset into train, val, test
         self.data_train, self.data_val, self.data_test = random_split(
-            self.dataset, [10000, 2500, 2500]) 
+            self.dataset, [10000, 2500, 2500], generator=torch.Generator().manual_seed(42))
+        if validation_flag:
+            self.data_train = ConcatDataset([self.data_train, self.data_val])
 
         # metric objects for calculating and averaging accuracy across batches
         self.train_acc = Accuracy(task="multiclass", num_classes=n_classes)
@@ -61,7 +64,7 @@ class LitModule(LightningModule):
         self.val_acc_best = MaxMetric()
 
     def forward(self, x):
-        embedding = self.backbone(x, self.low, self.up, self.hodge)
+        embedding = self.backbone(x, self.low, self.up)
         return embedding
     
     def model_step(self, batch, batch_idx):
@@ -127,6 +130,10 @@ class LitModule(LightningModule):
             }
         return {"optimizer": optimizer}
     
+    """
+    DataModule setup
+    """
+    
     def train_dataloader(self):
         return DataLoader(
             dataset=self.data_train,
@@ -137,13 +144,16 @@ class LitModule(LightningModule):
         )
         
     def val_dataloader(self):
-        return DataLoader(
-            dataset=self.data_val,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
-            shuffle=False,
-        )
+        if self.hparams.validation_flag:
+            return DataLoader(
+                dataset=self.data_val,
+                batch_size=self.hparams.batch_size,
+                num_workers=self.hparams.num_workers,
+                pin_memory=self.hparams.pin_memory,
+                shuffle=False,
+            )
+        else:
+            return None
 
     def test_dataloader(self):
         return DataLoader(
