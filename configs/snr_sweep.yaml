@@ -5,10 +5,14 @@ metric:
   name: val/acc
   goal: minimize
 parameters:
+  model:
+    values: [airtnn]
   seed:
-    values: [0,1,2]
+    values: [0,1,2,3,4]
   model.backbone.snr_db:
-    values: [-10,0,10,20,40,60]
+    values: [-10,0,10,20,40]
+  model.backbone.delta:
+    values: [1]
 
 command:
   - ${env}

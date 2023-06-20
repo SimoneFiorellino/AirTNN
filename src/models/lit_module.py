@@ -109,6 +109,11 @@ class LitModule(LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         print(self.test_confusion_matrix.compute())
+        # log the number of parameters of the backbone - note there are LazyLinear layers
+        # which are not counted in backbone.parameters()
+        self.num_params = sum(p.numel() for p in self.backbone.parameters() if p.requires_grad)
+        self.num_params = torch.tensor(self.num_params, dtype=torch.float32)
+        self.log("num_params", self.num_params, on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

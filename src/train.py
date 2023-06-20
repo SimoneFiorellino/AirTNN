@@ -41,5 +41,6 @@ def main(cfg):
     trainer.test(model=model)
 
 
+
 if __name__ == "__main__":
     main()

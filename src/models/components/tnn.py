@@ -5,10 +5,10 @@ from torch.nn import Linear
 
 from models.components.components_utilts import *
 
-class AirTNN(nn.Module):
+class TNN(nn.Module):
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = 1):
-        super(AirTNN, self).__init__()
+        super(TNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
@@ -36,7 +36,7 @@ class AirTNN(nn.Module):
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
-        if self.snr_db == 100:
+        if self.snr_db == 100 or self.training == True:
             x_up = batch_mm(upper_lp, x_up)
             x_low = batch_mm(lower_lp, x_low)
         else:

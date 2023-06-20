@@ -61,9 +61,9 @@ class CellDataset(Dataset):
         adj_matrix = adj_matrix / max_eig
         return adj_matrix
     
-    def _fill_diagonal(self, adj_matrix):
+    def _fill_diagonal(self, adj_matrix, n=1):
         """Fill the diagonal of the adjacency matrix."""
-        return adj_matrix.fill_diagonal_(1)
+        return adj_matrix.fill_diagonal_(n)
     
     def _create_edge_signal(self):
         """Create an edge signal."""
@@ -157,9 +157,10 @@ class CellDataset(Dataset):
 
         return t_sample.long()
 
-    def _support_of_matrix(self, matrix):
+    def _support_of_matrix(self, matrix, diagonal=True):
         """Return the support of a matrix. Diagonal is not included."""
-        matrix.fill_diagonal_(0)
+        if diagonal:
+            matrix.fill_diagonal_(0)
         return matrix.ne(0).float()
     
     def _symmetric_normalization(self, matrix):
@@ -228,8 +229,6 @@ class CellDataset(Dataset):
             edge_adj = self._support_of_matrix(self.lower_laplacian)
             edge_adj = self._fill_diagonal(edge_adj)
             self.edge_adj = self._matrix_normalization(edge_adj, 'spectral')
-            # edge_adj = self._fill_diagonal(self.lower_laplacian)
-            # self.edge_adj = self._spectral_normalization(edge_adj)
         self.hodge_laplacian = self._spectral_normalization(self.hodge_laplacian)
         self.lower_laplacian = self._spectral_normalization(self.lower_laplacian)
         self.upper_laplacian = self._spectral_normalization(self.upper_laplacian)
@@ -240,7 +239,7 @@ class CellDataset(Dataset):
         self.S = self._get_shift_matrix(shift_flag)
 
         # convert the laplacians to sparse matrices
-        # fill the diagonal to 0 -> compute the support -> to sparse
+        # compute the support -> normalization -> to sparse
         self.sparse_hodge_laplacian = self._matrix_normalization(self._support_of_matrix(self.hodge_laplacian), ntype).to_sparse()
         self.sparse_lower_laplacian = self._matrix_normalization(self._support_of_matrix(self.lower_laplacian), ntype).to_sparse()
         self.sparse_upper_laplacian = self._matrix_normalization(self._support_of_matrix(self.upper_laplacian), ntype).to_sparse()
@@ -291,9 +290,6 @@ class CellDataset(Dataset):
             for i in range(n_spikes):
                 source = self._get_source_edges(edge_list, edge_subsets, n_community, fixes_source_idxs, fixed=False)
                 xp = self._add_spike(xp, source, spike)
-                # # print the xp and the source
-                # print(f"xp: {xp}")
-                # print(f"source: {source}")
 
             # diffusion and noise
             xp = self._diffused_signal(xp, k, snr_db)

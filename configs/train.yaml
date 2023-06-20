@@ -5,7 +5,7 @@ defaults:
   - paths: default
   - hydra: default
   - trainer: gpu
-  - model: airgnn # <---------------------------------------------------------------------------------------
+  - model: airtnn # <---------------------------------------------------------------------------------------
   - datamodule: cell_sbm
 logger:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
@@ -15,7 +15,7 @@ logger:
   project: "airtnn"
   log_model: False # upload lightning ckpts
   group: ""
-  tags: ['06/15', 'spectral'] # <---------------------------------------------------------------------------------------
+  tags: ['06/20', 'model_sweep'] # <---------------------------------------------------------------------------------------
   notes: "paper_simulation"
   job_type: ""
 

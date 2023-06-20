@@ -7,10 +7,10 @@ n_classes: 11
 validation_flag: True
 
 backbone:
-  _target_: models.components.airtnn_backbone.Backbone
+  _target_: models.components.tnn_backbone.Backbone
   hidden_dim_ffnn: 1024
   n_classes: 11
-  hidden_dim: 32
+  hidden_dim: 64
   k: 5
   snr_db: 40
   p: .0
@@ -28,4 +28,4 @@ scheduler:
   _partial_: true
   mode: min
   factor: 0.1
-  patience: 20
+  patience: 10

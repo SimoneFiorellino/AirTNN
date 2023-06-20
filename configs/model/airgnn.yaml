@@ -13,8 +13,9 @@ backbone:
   hidden_dim: 64
   k: 5
   snr_db: 100
-  p: .3
+  p: .0
   delta: 1
+  n_layers: 2
 
 optimizer:
   _target_: torch.optim.Adam

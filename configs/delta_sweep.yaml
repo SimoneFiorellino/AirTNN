@@ -6,13 +6,13 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: [airgnn, airtnn]
+    values: [airtnn]
   seed:
-    values: [0,1,2,3,4,5,6,7,8,9]
+    values: [0,1,2,3,4]
   model.backbone.delta:
     values: [.25,.5,1.0,1.5,2.0]
   model.backbone.snr_db:
-    values: [0,20,40,60,80]
+    values: [20]
 
 command:
   - ${env}
