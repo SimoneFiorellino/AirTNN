@@ -20,9 +20,7 @@ class Backbone(torch.nn.Module):
         layers += [GNN(1, hidden_dim, k, snr_db, delta)]
         for _ in range(n_layers - 2):
             layers += [
-                GNN(hidden_dim, hidden_dim, k, snr_db, delta),
-                nn.ReLU(inplace=True),
-                nn.Dropout(p),
+                GNN(hidden_dim, hidden_dim, k, snr_db, delta)
             ]
         layers += [GNN(hidden_dim, 64, k, snr_db, delta)]
         self.layers = nn.ModuleList(layers)
@@ -30,10 +28,12 @@ class Backbone(torch.nn.Module):
         self.enc = torch.nn.LazyLinear(hidden_dim_ffnn)
         self.out = torch.nn.LazyLinear(n_classes)
 
-    def forward(self, x, lower, upper):
+    def forward(self, x, lower, _):
         # # GNN
         for i in range(len(self.layers)):
             x = self.layers[i](x, lower)
+            x = F.relu(x)
+            x = F.dropout(x, p=self.p)
         # Max pooling: [batch_size, nodes, F] -> [batch_size, F]
         x = x.max(dim=1)[0]
         # MLP

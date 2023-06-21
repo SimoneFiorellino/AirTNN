@@ -30,9 +30,11 @@ class AirTNN(nn.Module):
             lin.reset_parameters()
         for lin in self.low_lins:
             lin.reset_parameters()
+        self.h_lin.reset_parameters()
 
     def shift(self, x_up, x_low, upper_lp, lower_lp):
         """function to shift the input signal:
+        0. sample S and noise
         1. multiply pairwise A with S
         2. apply the shift operator to x
         3. add white noise"""
@@ -41,7 +43,7 @@ class AirTNN(nn.Module):
             x_low = batch_mm(lower_lp, x_low)
         else:
             fading = full_channel_fading(upper_lp, self.delta)
-            noise  = white_noise(x_up, self.snr_db)[None,:,:]
+            noise  = white_noise(x_up, self.snr_lin)[None,:,:]
             x_up  = batch_mm(upper_lp * fading, x_up ) + noise
             x_low = batch_mm(lower_lp * fading, x_low) + noise
         return x_up, x_low

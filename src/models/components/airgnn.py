@@ -34,7 +34,7 @@ class AirGNN(nn.Module):
             return batch_mm(S,x)
         
         fading = full_channel_fading(S, self.delta)
-        x = batch_mm(S * fading, x) + white_noise(x, self.snr_db)[None,:,:]
+        x = batch_mm(S * fading, x) + white_noise(x, self.snr_lin)[None,:,:]
         
         return x
 

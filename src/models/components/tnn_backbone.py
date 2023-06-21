@@ -20,9 +20,7 @@ class Backbone(torch.nn.Module):
         layers += [TNN(1, hidden_dim, k, snr_db, delta)]
         for _ in range(n_layers - 2):
             layers += [
-                TNN(hidden_dim, hidden_dim, k, snr_db, delta),
-                nn.ReLU(inplace=True),
-                nn.Dropout(p),
+                TNN(hidden_dim, hidden_dim, k, snr_db, delta)
             ]
         layers += [TNN(hidden_dim, 64, k, snr_db, delta)]
         self.layers = nn.ModuleList(layers)
@@ -33,7 +31,9 @@ class Backbone(torch.nn.Module):
     def forward(self, x, lower, upper):
         # # TNN
         for i in range(len(self.layers)):
-            x = self.layers[i](x, lower)
+            x = self.layers[i](x, lower, upper)
+            x = F.relu(x)
+            x = F.dropout(x, p=self.p)
         # Max pooling: [batch_size, nodes, F] -> [batch_size, F]
         x = x.max(dim=1)[0]
         # MLP
