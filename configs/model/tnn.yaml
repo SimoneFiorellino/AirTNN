@@ -10,12 +10,12 @@ backbone:
   _target_: models.components.tnn_backbone.Backbone
   hidden_dim_ffnn: 1024
   n_classes: 11
-  hidden_dim: 64
-  k: 5
-  snr_db: 40
+  hidden_dim: 16
+  k: 3
+  n_layers: 2
+  snr_db: 100
   p: .0
   delta: 1
-  n_layers: 2
 
 optimizer:
   _target_: torch.optim.Adam
