@@ -3,11 +3,12 @@ import torch.nn as nn
 from torch.nn import Linear
 
 from models.components.components_utilts import *
+from models.components.airnn import AirNN
 
-class AirGNN(nn.Module):
+class AirGNN(AirNN):
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = 1):
-        super(AirGNN, self).__init__()
+        super(AirNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
@@ -32,10 +33,7 @@ class AirGNN(nn.Module):
         3. add white noise"""
         if self.snr_db == 100:
             return batch_mm(S,x)
-        
-        fading = full_channel_fading(S, self.delta)
-        x = batch_mm(S * fading, x) + white_noise(x, self.snr_lin)[None,:,:]
-        
+        x = batch_mm(S * self.channel_fading(S, self.delta), x) + self.white_noise(x, self.snr_lin)[None,:,:]
         return x
 
     def forward(self, x_in, adj):
@@ -43,6 +41,7 @@ class AirGNN(nn.Module):
         1. shift the input signal
         2. apply the weight matrix to x
         3. sum the output of each shift"""
+
         x = self.shift(x_in, adj)
         out = self.lins[0].forward(x)
         for lin in self.lins[1:]:

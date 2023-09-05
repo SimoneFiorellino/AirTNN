@@ -3,12 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Linear
 
-from models.components.components_utilts import *
+from models.components.airnn import AirNN
 
-class TNN(nn.Module):
+class TNN(AirNN):
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = 1):
-        super(TNN, self).__init__()
+        super(AirNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
@@ -38,13 +38,11 @@ class TNN(nn.Module):
         2. apply the shift operator to x
         3. add white noise"""
         if self.snr_db == 100 or self.training == True:
-            x_up = batch_mm(upper_lp, x_up)
-            x_low = batch_mm(lower_lp, x_low)
+            x_up = self.batch_mm(upper_lp, x_up)
+            x_low = self.batch_mm(lower_lp, x_low)
         else:
-            fading = full_channel_fading(upper_lp, self.delta)
-            noise  = white_noise(x_up, self.snr_lin)[None,:,:]
-            x_up  = batch_mm(upper_lp * fading, x_up ) + noise
-            x_low = batch_mm(lower_lp * fading, x_low) + noise
+            x_up  = self.batch_mm(upper_lp * self.channel_fading(upper_lp, self.delta), x_up ) + self.white_noise(x_up, self.snr_lin)[None,:,:]
+            x_low = self.batch_mm(lower_lp * self.channel_fading(lower_lp, self.delta), x_low) + self.white_noise(x_low, self.snr_lin)[None,:,:]
         return x_up, x_low
 
     def forward(self, x, lower_lp, upper_lp):

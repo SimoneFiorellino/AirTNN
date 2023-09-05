@@ -12,7 +12,6 @@ backbone:
   n_classes: 11
   hidden_dim: 16
   k: 3
-  n_layers: 2
   snr_db: 100
   p: .0
   delta: 1

@@ -6,13 +6,15 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: [airtnn]
+    values: [gnn, tnn]
   seed:
     values: [0,1,2,3,4]
   model.backbone.delta:
     values: [.25,.5,1.0,1.5,2.0]
   model.backbone.snr_db:
     values: [20]
+  trainer.max_epochs:
+    values: [80]
 
 command:
   - ${env}

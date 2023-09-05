@@ -1,14 +1,19 @@
 % File paths for the four CSV files
-csvFilePaths = {'airtnn_87195_grouped.csv', 'airgnn_99563_grouped.csv', ...
-                'tnn_87195_grouped.csv', 'gnn_99563_grouped.csv'};  % Replace with your actual CSV file paths
+csvFilePaths = {'airtnn_grouped.csv', 'airgnn_grouped.csv', ...
+                'tnn_grouped.csv', 'gnn_grouped.csv'};  % Replace with your actual CSV file paths
+
+set(0, 'defaultTextInterpreter', 'latex');
+set(0, 'defaultAxesTickLabelInterpreter', 'latex');
+set(0, 'defaultLegendInterpreter', 'latex');
+set(0, 'defaultAxesFontName', 'Times New Roman');
 
 % Markers and colors for the plots
-markers = {'o', 'o', 'o', 'o'};
-colors = {'blue', 'red', 'green', 'magenta'};
-names = {'airtnn', 'airgnn', 'tnn', 'gnn'};
+markers = {'-o', '-x', '-diamond', '->'};
+colors = {'#0072BD', '#D95319', '#EDB120', '#77AC30'};
+names = {'AirTNN', 'AirGNN', 'TNN', 'GNN'};
 
 % Create the plot with error bars
-figure('Position', [0, 0, 2800, 2100]);  % [left, bottom, width, height]
+figure('Position', [0, 0, 600, 450]);  % [left, bottom, width, height]
 hold on;
 
 % Loop through each CSV file to plot data
@@ -19,30 +24,39 @@ for i = 1:length(csvFilePaths)
     % Extract columns from the table
     x_values = dataTable.('model/backbone/delta');
     y_values = dataTable.mean;
-    y_std = dataTable.std;
     
     % Plotting for the current CSV file
-    h = errorbar(x_values, y_values, y_std, markers{i}, 'MarkerSize', 6, 'MarkerEdgeColor', colors{i}, 'MarkerFaceColor', colors{i});
-    set(h, 'HandleVisibility', 'off');  % Hide from legend
-    plot(x_values, y_values, '-', 'Color', colors{i}, 'DisplayName', names{i});
+    %h = errorbar(x_values, y_values, NaN, markers{i}, 'MarkerSize', 6, 'MarkerEdgeColor', colors{i}, 'LineWidth', 3);
+    %set(h, 'HandleVisibility', 'off');  % Hide from legend
+    plot(x_values, y_values, markers{i}, 'MarkerSize', 12, 'Color', colors{i}, 'DisplayName', names{i}, 'LineWidth', 3);
 end
 
 % Add a flat curve with mean accuracy of 0.97
-x = [0.25, 0.5, 1, 1.5, 2];
-y = repmat(0.97, size(x));
-h = errorbar(x, y, NaN, 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'cyan', 'MarkerFaceColor', 'cyan');
-set(h, 'HandleVisibility', 'off');  % Hide from legend
-plot(x, y, '-', 'Color', 'cyan', 'DisplayName', 'models without fading and noise');
+%x = [0.25, 0.5, 1, 1.5, 2];
+%y = repmat(0.96, size(x));
+%h = errorbar(x, y, NaN, 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'cyan', 'MarkerFaceColor', 'cyan');
+%set(h, 'HandleVisibility', 'off');  % Hide from legend
+%plot(x, y, '-', 'Color', 'cyan', 'DisplayName', 'models without fading and noise');
+
+yline(0.96, '--', 'Color', [0, 0, 0], 'LineWidth', 3, 'DisplayName', 'Ideal setting');
 
 hold off;  % Release the existing plot
 
+% Set font size for axes tick labels
+ax = gca;
+ax.FontSize = 16;  % Set font size for axes
+ax.LineWidth = 1;
+
 % Add labels and title
-xlabel('\delta');
 xticks(0.25:0.25:2);
-ylabel('Mean Accuracy');
+xlim([0.25, 2]);
+
+xlabel('$\delta$', 'Interpreter', 'latex', 'FontSize', 21);
+ylabel('Accuracy', 'Interpreter', 'latex', 'FontSize', 21);
+
 
 % Add legend
-legend('Location', 'east');
+legend('Location', 'east', 'FontSize', 21, 'LineWidth', 0.01);
 
 % Add grid
 grid on;
@@ -54,8 +68,5 @@ set(gcf, 'PaperPosition', [0 0 10.667 8]);  % [left bottom width height] in inch
 set(gcf, 'PaperSize', [10.667 8]);  % width x height in inches
 
 % Save the plot
-%set(gcf, 'PaperPositionMode', 'auto');
-print('delta_plot', '-dpdf', '-r300');
-
-
-
+% set(gcf, 'PaperPositionMode', 'auto');
+print('delta_plot', '-dpdf');

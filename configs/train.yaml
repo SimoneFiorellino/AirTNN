@@ -12,10 +12,10 @@ logger:
   save_dir: "logs"
   offline: False # <---------------------------------------------------------------------------------------
   id: null # pass correct id to resume experiment!
-  project: "airtnn_is_all_you_need" 
+  project: "ICASSP24" 
   log_model: False # upload lightning ckpts
   group: ""
-  tags: ['06/21', 'snr_sweep'] # <---------------------------------------------------------------------------------------
+  tags: ['09/04', 'snr'] # <---------------------------------------------------------------------------------------
   notes: "paper_simulation"
   job_type: ""
 
@@ -33,4 +33,4 @@ dataset:
   snr_db: 40
   n_spikes: .85
   shift_flag: 'edge_adj'
-  ntype: 'spectral'
+  ntype: identity # 'spectral', 'identity'

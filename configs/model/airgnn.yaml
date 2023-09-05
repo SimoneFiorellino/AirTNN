@@ -10,9 +10,8 @@ backbone:
   _target_: models.components.airgnn_backbone.Backbone
   hidden_dim_ffnn: 1024
   n_classes: 11
-  hidden_dim: 32
+  hidden_dim: 64
   k: 5
-  n_layers: 3
   snr_db: 100
   p: .0
   delta: 1

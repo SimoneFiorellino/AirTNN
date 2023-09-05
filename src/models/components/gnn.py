@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear
-from models.components.components_utilts import *
+from models.components.airnn import AirNN
 
-class GNN(nn.Module):
+class GNN(AirNN):
 
     def __init__(self, c_in, c_out, k = 1, snr_db = 10, delta = 1):
-        super(GNN, self).__init__()
+        super(AirNN, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
         self.snr_db = snr_db
@@ -30,10 +30,10 @@ class GNN(nn.Module):
         2. apply the shift operator to x
         3. add white noise"""
         if self.snr_db == 100 or self.training == True:
-            return batch_mm(S,x)
+            return self.batch_mm(S,x)
         
-        fading = full_channel_fading(S, self.delta)
-        x = batch_mm(S * fading, x) + white_noise(x, self.snr_lin)[None,:,:]
+        fading = self.channel_fading(S, self.delta)
+        x = self.batch_mm(S * fading, x) + self.white_noise(x, self.snr_lin)[None,:,:]
         
         return x
 

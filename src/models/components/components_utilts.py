@@ -20,7 +20,7 @@ def channel_fading(adj, delta):
 def full_channel_fading(s, delta):
     """function to generate channel fading"""
     with torch.no_grad():
-        s_air = torch.randn(size=s.shape, dtype=torch.complex64, device='cuda') * delta
+        s_air = torch.randn(size=s.shape, dtype=torch.complex64, device=s.device) * delta
         s_air = torch.abs(s_air)
         return s_air
     
