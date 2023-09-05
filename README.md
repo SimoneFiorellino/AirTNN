@@ -6,20 +6,22 @@
 <a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
 <a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
 <a href="https://wandb.ai/site"><img alt="Weights & Biases" src="https://img.shields.io/badge/Weights%20%26%20Biases-ffbe00?logo=weightsandbiases&logoColor=white"></a>
-
+<!--
 [![Paper](.svg)](mylinktopaper)
+-->
+
     
 </div>
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
+1. [Abstract](#Abstract)
 2. [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Setting up a Conda Environment](#setting-up-a-conda-environment)
 3. [Usage](#usage)
 
-## Introduction
+## Abstract
 
 Topological neural networks (TNNs) are information processing architectures that model representations from data lying over topological spaces (e.g., simplicial or cell complexes) and allow for decentralized implementation through localized communications over different neighborhoods. Existing TNN architectures have not yet been considered in realistic communication scenarios, where channel effects typically introduce disturbances such as fading and noise. This paper aims to propose a novel TNN design, operating on regular cell complexes, that performs over-the-air computation, incorporating the wireless communication model into its architecture. Specifically, during training and inference, the proposed method considers channel impairments such as fading and noise in the topological convolutional filtering operation, which takes place over different signal orders and neighborhoods. Numerical results illustrate the architecture's robustness to channel impairments during testing and the superior performance with respect to existing architectures, which are either communication-agnostic or graph-based. 
 
@@ -33,22 +35,22 @@ Topological neural networks (TNNs) are information processing architectures that
 
 1. **Clone the repository**
     ```bash
-    git clone https://github.com/your_username/your_project_name.git
+    git clone https://github.com/SimoneFiorellino/airtnn.git
     ```
 
 2. **Navigate to the project directory**
     ```bash
-    cd your_project_name
+    cd airtnn
     ```
 
 3. **Create a new Conda environment**
     ```bash
-    conda create --name your_environment_name python=3.x
+    conda create --name airtnn python=3.9.16
     ```
 
 4. **Activate the Conda environment**
     ```bash
-    conda activate your_environment_name
+    conda activate airtnn
     ```
 
 5. **Install the required packages**
