@@ -161,5 +161,4 @@ logs/
 *.DS_Store
 lightning_logs/*
 
-plots/*.csv
-plots/*.py
+_*
