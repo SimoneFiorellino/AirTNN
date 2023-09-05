@@ -6,7 +6,7 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: [gnn, tnn]
+    values: [tnn, gnn, airtnn, airgnn]
   seed:
     values: [0,1,2,3,4]
   model.backbone.delta:

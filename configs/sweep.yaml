@@ -6,19 +6,19 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: [airgnn]
+    values: [airtnn, airgnn]
   model.backbone.hidden_dim:
     values: [64,32,16]
   model.backbone.k:
-    values: [3,5]
+    values: [1,3,5]
   model.backbone.p:
-    values: [.0]
+    values: [.0,.3,.5]
   model.backbone.snr_db:
     values: [100]
   model.batch_size:
-    values: [128]
+    values: [64,128]
   trainer.max_epochs:
-    values: [60]
+    values: [100]
   
 
 # early_terminate:
