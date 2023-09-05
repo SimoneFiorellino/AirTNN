@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear
+
 from models.components.airnn import AirNN
 
 class GNN(AirNN):

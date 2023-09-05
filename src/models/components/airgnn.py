@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.nn import Linear
 
-from models.components.components_utilts import *
 from models.components.airnn import AirNN
 
 class AirGNN(AirNN):
@@ -32,8 +31,8 @@ class AirGNN(AirNN):
         2. apply the shift operator to x
         3. add white noise"""
         if self.snr_db == 100:
-            return batch_mm(S,x)
-        x = batch_mm(S * self.channel_fading(S, self.delta), x) + self.white_noise(x, self.snr_lin)[None,:,:]
+            return self.batch_mm(S,x)
+        x = self.batch_mm(S * self.channel_fading(S, self.delta), x) + self.white_noise(x, self.snr_lin)[None,:,:]
         return x
 
     def forward(self, x_in, adj):
